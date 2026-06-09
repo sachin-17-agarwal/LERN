@@ -58,17 +58,18 @@ final class SessionViewModel: Identifiable {
         startTimer()
     }
 
-    deinit {
-        timerTask?.cancel()
-    }
-
     // MARK: - Timer
 
     private func startTimer() {
+        // The Task inherits @MainActor isolation from this method, so the
+        // mutation is safe without an explicit hop. `guard let self` lets the
+        // loop end on its own if the view model is deallocated, and
+        // `finishSession()` cancels it explicitly when the session ends.
         timerTask = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(1))
-                await MainActor.run { self?.elapsedSeconds += 1 }
+                guard let self else { break }
+                self.elapsedSeconds += 1
             }
         }
     }
