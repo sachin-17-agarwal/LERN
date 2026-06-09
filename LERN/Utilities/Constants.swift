@@ -29,6 +29,17 @@ enum Constants {
         static let germanLocale = "de_DE"
     }
 
+    /// Azure AI Speech — Pronunciation Assessment (REST).
+    enum Azure {
+        static let language = "de-DE"
+        static let sampleRate = 16000
+
+        /// Short-audio recognition endpoint for the given region (e.g. "australiaeast").
+        static func endpoint(region: String) -> String {
+            "https://\(region).stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1"
+        }
+    }
+
     /// Goethe-Institut Sydney contact details, surfaced on the exam readiness card.
     enum Goethe {
         static let address = "90 Ocean Street, Woollahra NSW 2025"

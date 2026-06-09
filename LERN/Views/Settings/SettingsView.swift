@@ -11,6 +11,10 @@ struct SettingsView: View {
     @State private var apiKeySaved = KeychainManager.hasAPIKey
     @State private var showSavedConfirmation = false
 
+    @State private var azureKeyInput = ""
+    @State private var azureRegionInput = ""
+    @State private var azureSaved = KeychainManager.hasAzureCredentials
+
     @AppStorage("reminderEnabled") private var reminderEnabled = true
     @AppStorage("reminderHour") private var reminderHour = Constants.Notifications.defaultHour
     @AppStorage("reminderMinute") private var reminderMinute = Constants.Notifications.defaultMinute
@@ -26,6 +30,7 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 apiKeySection
+                azureSection
                 notificationSection
                 examSection
                 if let profile { exportSection(profile) }
@@ -60,6 +65,33 @@ struct SettingsView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text("Your API key is stored securely.")
+        }
+    }
+
+    // MARK: - Azure pronunciation
+
+    private var azureSection: some View {
+        Section {
+            SecureField(azureSaved ? "•••••••• (saved)" : "Azure Speech key", text: $azureKeyInput)
+                .textContentType(.password)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+
+            TextField(azureSaved ? "Region (saved)" : "Region (e.g. australiaeast)", text: $azureRegionInput)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+
+            Button("Save Azure credentials") { saveAzure() }
+                .disabled(azureKeyInput.trimmingCharacters(in: .whitespaces).isEmpty
+                          || azureRegionInput.trimmingCharacters(in: .whitespaces).isEmpty)
+
+            if azureSaved {
+                Button("Remove Azure credentials", role: .destructive) { removeAzure() }
+            }
+        } header: {
+            Text("Pronunciation Scoring (Azure)")
+        } footer: {
+            Text("Optional. Powers pronunciation scoring. Create a free Speech resource at portal.azure.com and paste its key and region. Stored in the Keychain.")
         }
     }
 
@@ -156,6 +188,23 @@ struct SettingsView: View {
         KeychainManager.delete(account: KeychainManager.apiKeyAccount)
         apiKeySaved = false
         appState.refreshAPIKeyStatus()
+    }
+
+    private func saveAzure() {
+        let key = azureKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        let region = azureRegionInput.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !key.isEmpty, !region.isEmpty else { return }
+        try? KeychainManager.setAzureCredentials(key: key, region: region)
+        azureKeyInput = ""
+        azureRegionInput = ""
+        azureSaved = true
+        showSavedConfirmation = true
+    }
+
+    private func removeAzure() {
+        KeychainManager.delete(account: KeychainManager.azureKeyAccount)
+        KeychainManager.delete(account: KeychainManager.azureRegionAccount)
+        azureSaved = false
     }
 
     private func scheduleReminder() {

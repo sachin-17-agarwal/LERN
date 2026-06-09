@@ -9,6 +9,7 @@ struct HomeView: View {
 
     @State private var sessionVM: SessionViewModel?
     @State private var showAPIKeyPrompt = false
+    @State private var showPronunciation = false
 
     private var profile: UserProfile? { profiles.first }
 
@@ -27,6 +28,9 @@ struct HomeView: View {
         }
         .fullScreenCover(item: $sessionVM) { vm in
             SessionView(viewModel: vm)
+        }
+        .sheet(isPresented: $showPronunciation) {
+            PronunciationView()
         }
         .alert("Add your API key", isPresented: $showAPIKeyPrompt) {
             Button("OK", role: .cancel) {}
@@ -87,6 +91,9 @@ struct HomeView: View {
                 }
                 quickAction("Grammar", systemImage: "text.book.closed", count: nil) {
                     startSession(profile: profile)
+                }
+                quickAction("Pronunciation", systemImage: "waveform", count: nil) {
+                    showPronunciation = true
                 }
                 quickAction("Mock Exam", systemImage: "checkmark.seal", count: nil) {
                     startSession(profile: profile)

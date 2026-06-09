@@ -13,6 +13,8 @@ struct KeychainManager {
     /// The service identifier under which secrets are stored.
     private static let service = "com.vaux.lern"
     static let apiKeyAccount = "anthropic_api_key"
+    static let azureKeyAccount = "azure_speech_key"
+    static let azureRegionAccount = "azure_speech_region"
 
     // MARK: - Public API
 
@@ -87,5 +89,21 @@ struct KeychainManager {
     static var hasAPIKey: Bool {
         guard let key = apiKey else { return false }
         return !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    // MARK: - Convenience for Azure Speech
+
+    static var azureKey: String? { read(account: azureKeyAccount) }
+    static var azureRegion: String? { read(account: azureRegionAccount) }
+
+    static func setAzureCredentials(key: String, region: String) throws {
+        try set(key, account: azureKeyAccount)
+        try set(region, account: azureRegionAccount)
+    }
+
+    static var hasAzureCredentials: Bool {
+        guard let key = azureKey, let region = azureRegion else { return false }
+        return !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !region.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 }
