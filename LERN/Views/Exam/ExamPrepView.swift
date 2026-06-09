@@ -1,0 +1,149 @@
+import SwiftUI
+import SwiftData
+
+/// Goethe exam mock-test launcher.
+struct ExamPrepView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query private var profiles: [UserProfile]
+
+    @State private var examVM: ExamViewModel?
+    @State private var showExam = false
+    @State private var selectedLevel = "A2"
+    @State private var showAPIKeyPrompt = false
+
+    private var profile: UserProfile? { profiles.first }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                if let profile {
+                    content(for: profile)
+                } else {
+                    ProgressView().padding(.top, 80)
+                }
+            }
+            .background(Color.lernBackground)
+            .navigationTitle("Exam Prep")
+        }
+        .fullScreenCover(isPresented: $showExam) {
+            if let examVM {
+                MockExamView(viewModel: examVM)
+            }
+        }
+        .alert("Add your API key", isPresented: $showAPIKeyPrompt) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Enter your Anthropic API key in Settings to generate exams.")
+        }
+    }
+
+    @ViewBuilder
+    private func content(for profile: UserProfile) -> some View {
+        VStack(spacing: 20) {
+            // Level selector
+            Picker("Level", selection: $selectedLevel) {
+                Text("A1").tag("A1")
+                Text("A2").tag("A2")
+                Text("B1").tag("B1")
+            }
+            .pickerStyle(.segmented)
+
+            // Full mock
+            Button {
+                launchFullMock(profile: profile)
+            } label: {
+                VStack(spacing: 6) {
+                    Image(systemName: "doc.text.fill").font(.title)
+                    Text("Start Full Mock Exam").font(.headline)
+                    Text("4 modules · Goethe \(selectedLevel) format")
+                        .font(.caption).foregroundStyle(.white.opacity(0.85))
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .foregroundStyle(.white)
+                .background(Color.lernPrimary, in: RoundedRectangle(cornerRadius: 16))
+            }
+            .buttonStyle(.plain)
+
+            // Skill-specific practice
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Skill Practice").font(.headline)
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                    ForEach(SkillType.allCases) { skill in
+                        Button {
+                            launchSkill(skill, profile: profile)
+                        } label: {
+                            VStack(spacing: 6) {
+                                Image(systemName: skill.symbolName).font(.title2)
+                                Text(skill.germanName).font(.subheadline.weight(.medium))
+                                Text(skill.displayName).font(.caption2).foregroundStyle(.secondary)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 14))
+                            .foregroundStyle(Color.forSkill(skill))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+
+            // Past results
+            pastResults(for: profile)
+        }
+        .padding()
+    }
+
+    @ViewBuilder
+    private func pastResults(for profile: UserProfile) -> some View {
+        let results = profile.examResults.sorted { $0.date > $1.date }
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Past Results").font(.headline)
+            if results.isEmpty {
+                Text("No mock exams taken yet.")
+                    .font(.footnote).foregroundStyle(.secondary)
+            } else {
+                ForEach(results) { result in
+                    NavigationLink {
+                        ExamResultView(result: result)
+                    } label: {
+                        HStack {
+                            Image(systemName: result.passed ? "checkmark.seal.fill" : "xmark.seal")
+                                .foregroundStyle(result.passed ? Color.lernSuccess : Color.lernError)
+                            VStack(alignment: .leading) {
+                                Text("\(result.examLevel) · \(Int(result.totalScore))/100")
+                                    .fontWeight(.medium)
+                                Text(result.date.shortDateString)
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+                        }
+                        .padding()
+                        .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 12))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func launchFullMock(profile: UserProfile) {
+        guard KeychainManager.hasAPIKey else { showAPIKeyPrompt = true; return }
+        let vm = ExamViewModel(profile: profile, modelContext: modelContext)
+        vm.selectedLevel = selectedLevel
+        examVM = vm
+        showExam = true
+        Task { await vm.startFullMock() }
+    }
+
+    private func launchSkill(_ skill: SkillType, profile: UserProfile) {
+        guard KeychainManager.hasAPIKey else { showAPIKeyPrompt = true; return }
+        let vm = ExamViewModel(profile: profile, modelContext: modelContext)
+        vm.selectedLevel = selectedLevel
+        examVM = vm
+        showExam = true
+        Task { await vm.startSkillPractice(skill) }
+    }
+}

@@ -1,0 +1,45 @@
+import Foundation
+
+extension String {
+
+    /// Trimmed, case- and whitespace-insensitive comparison for answer checking.
+    func matchesAnswer(_ other: String) -> Bool {
+        normalizedForComparison == other.normalizedForComparison
+    }
+
+    /// Lowercased, trimmed, with surrounding punctuation removed.
+    var normalizedForComparison: String {
+        let lowered = self.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        return lowered.trimmingCharacters(in: CharacterSet(charactersIn: ".,!?;:\"'"))
+    }
+
+    /// Strips a leading German article (der/die/das/ein/eine) for word display.
+    var withoutArticle: String {
+        let articles = ["der ", "die ", "das ", "ein ", "eine "]
+        for article in articles where lowercased().hasPrefix(article) {
+            return String(dropFirst(article.count))
+        }
+        return self
+    }
+
+    /// True if the string contains a German umlaut or eszett.
+    var containsGermanSpecialCharacters: Bool {
+        contains(where: { "äöüÄÖÜß".contains($0) })
+    }
+
+    /// Returns the string with markdown/code fences stripped — used to clean
+    /// JSON returned by the model that may be wrapped in ```json ... ```.
+    var strippingCodeFences: String {
+        var s = trimmingCharacters(in: .whitespacesAndNewlines)
+        if s.hasPrefix("```") {
+            // Drop the first line (``` or ```json) and the trailing fence.
+            if let firstNewline = s.firstIndex(of: "\n") {
+                s = String(s[s.index(after: firstNewline)...])
+            }
+            if let fenceRange = s.range(of: "```", options: .backwards) {
+                s = String(s[..<fenceRange.lowerBound])
+            }
+        }
+        return s.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}

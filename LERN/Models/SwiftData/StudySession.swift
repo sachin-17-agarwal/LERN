@@ -1,0 +1,40 @@
+import Foundation
+import SwiftData
+
+/// A single completed (or partially completed) study session.
+@Model
+final class StudySession {
+    var id: UUID = UUID()
+    var date: Date = Date()
+    var durationMinutes: Int = 0
+    var weekNumber: Int = 1
+    var sessionType: String = "standard"          // "standard", "weekend", "exam_prep"
+    var completedPhases: [SessionPhase] = []
+
+    // Review phase results
+    var reviewItemsCount: Int = 0
+    var reviewCorrectCount: Int = 0
+
+    // Lesson phase
+    var grammarTopicCovered: String = ""
+    var vocabularyDomainCovered: String = ""
+
+    // Production phase
+    var productionText: String = ""               // What the user wrote in German
+    var productionFeedback: String = ""           // AI analysis
+    var errorsFound: Int = 0
+    var avoidedStructuresNoted: [String] = []     // Structures the user never attempted
+
+    var profile: UserProfile?
+
+    init(
+        date: Date = Date(),
+        weekNumber: Int = 1,
+        sessionType: String = "standard"
+    ) {
+        self.id = UUID()
+        self.date = date
+        self.weekNumber = weekNumber
+        self.sessionType = sessionType
+    }
+}

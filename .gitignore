@@ -1,0 +1,24 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+*.xcscmblueprint
+
+# Xcode per-user data
+xcuserdata/
+**/xcuserdata/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# macOS
+.DS_Store
+
+# CocoaPods / Carthage (unused, but ignored if added later)
+Pods/
+Carthage/Build/
+
+# Secrets — the API key lives only in the iOS Keychain, never in the repo
+*.env
+secrets.plist
