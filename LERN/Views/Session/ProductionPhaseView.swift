@@ -80,7 +80,7 @@ struct ProductionPhaseView: View {
             }
 
             if !analysis.overall_feedback.isEmpty {
-                Text(analysis.overall_feedback)
+                Text(analysis.overall_feedback.inlineMarkdown)
                     .font(.subheadline)
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)

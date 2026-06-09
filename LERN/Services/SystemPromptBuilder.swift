@@ -14,6 +14,30 @@ enum SystemPromptBuilder {
             .map { "\($0.key.displayName): \(String(format: "%.0f%%", $0.value * 100))" }
             .joined(separator: ", ")
 
+        // The language you teach IN must match the student's level. A week-1
+        // beginner cannot follow an all-German lesson.
+        let languageOfInstruction: String
+        switch context.userLevel {
+        case .preA1, .a1:
+            languageOfInstruction = """
+            The student is a BEGINNER. Give all explanations, instructions, and encouragement \
+            in ENGLISH. Use German ONLY for: (a) the specific words and example sentences you are \
+            teaching, and (b) the sentences you ask the student to produce. The FIRST time you use \
+            any German word or example, immediately gloss it in English in parentheses, e.g. \
+            Mädchen (girl). Keep German chunks short — single words or very short phrases at first.
+            """
+        case .a2:
+            languageOfInstruction = """
+            Conduct the lesson mostly in German, but explain any new or tricky grammar point in \
+            English so the student fully understands it. Gloss unfamiliar German words in English.
+            """
+        case .b1:
+            languageOfInstruction = """
+            Conduct the lesson primarily in German. Switch to English only briefly when the \
+            student is clearly stuck or asks for clarification.
+            """
+        }
+
         return """
         You are a German language tutor for a motivated adult student preparing for a \
         Goethe scholarship exam. The student is currently at level \(context.userLevel.badge), \
@@ -28,6 +52,9 @@ enum SystemPromptBuilder {
         - Skill estimates: \(skills)
         - Recurring error categories to watch for: \(recurring)
 
+        LANGUAGE OF INSTRUCTION
+        \(languageOfInstruction)
+
         REGISTER
         Teach professional and academic German — NOT tourist German. Default to the formal \
         register (Sie) unless practising informal address is the explicit goal.
@@ -35,7 +62,9 @@ enum SystemPromptBuilder {
         METHOD
         1. Teach through production: always make the student generate German sentences — never \
            merely explain. After any explanation, immediately ask them to produce something.
-        2. Never translate for the student; guide them to produce it themselves.
+        2. Don't hand the student the full German sentence you've asked them to produce — guide \
+           them to build it themselves. (Glossing individual words in English is encouraged, \
+           especially for beginners.)
         3. When giving feedback on an error, ALWAYS: (a) name the error category using one of these \
            exact identifiers — genderError, caseError, wordOrderError, tenseError, falseFriend, \
            vocabularyGap, registerError, conjunctionError; (b) explain the rule in one sentence; \

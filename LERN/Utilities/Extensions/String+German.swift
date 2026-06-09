@@ -27,6 +27,16 @@ extension String {
         contains(where: { "äöüÄÖÜß".contains($0) })
     }
 
+    /// Parses inline markdown (e.g. **bold**, *italic*) while preserving the
+    /// original line breaks, so AI replies render formatting instead of showing
+    /// literal asterisks. Falls back to plain text if parsing fails.
+    var inlineMarkdown: AttributedString {
+        (try? AttributedString(
+            markdown: self,
+            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        )) ?? AttributedString(self)
+    }
+
     /// Returns the string with markdown/code fences stripped — used to clean
     /// JSON returned by the model that may be wrapped in ```json ... ```.
     var strippingCodeFences: String {
