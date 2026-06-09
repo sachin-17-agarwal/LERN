@@ -13,7 +13,7 @@ struct AIMessageBubble: View {
             if isUser { Spacer(minLength: 40) }
 
             VStack(alignment: .leading, spacing: 6) {
-                Text(message.content.isEmpty && isStreaming ? "…" : message.content)
+                Text(message.content.isEmpty && isStreaming ? AttributedString("…") : message.content.inlineMarkdown)
                     .foregroundStyle(isUser ? .white : .primary)
                     .textSelection(.enabled)
 
