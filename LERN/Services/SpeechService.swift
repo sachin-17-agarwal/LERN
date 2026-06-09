@@ -13,12 +13,14 @@ final class SpeechService: NSObject {
         case notAuthorized
         case recognizerUnavailable
         case audioEngineFailed
+        case simulatorUnsupported
 
         var errorDescription: String? {
             switch self {
             case .notAuthorized:        return "Speech recognition permission is required. You can still type your answer."
-            case .recognizerUnavailable: return "German speech recognition is not available on this device."
-            case .audioEngineFailed:    return "Could not start the microphone."
+            case .recognizerUnavailable: return "German speech recognition is not available right now. You can type your answer instead."
+            case .audioEngineFailed:    return "Could not start the microphone. You can type your answer instead."
+            case .simulatorUnsupported: return "Dictation needs a real microphone, which the iOS Simulator doesn't have. Run on an iPhone to use speech, or type your answer."
             }
         }
     }
@@ -52,26 +54,38 @@ final class SpeechService: NSObject {
 
     /// Begins live transcription, yielding partial results as a stream.
     func startListening() throws -> AsyncStream<String> {
+        // The Simulator has no audio input hardware; touching the audio engine
+        // there traps (EXC_BREAKPOINT). Bail out before any AVAudioEngine access.
+        #if targetEnvironment(simulator)
+        throw SpeechError.simulatorUnsupported
+        #else
+
         guard let recognizer, recognizer.isAvailable else {
             throw SpeechError.recognizerUnavailable
         }
 
-        // Reset any prior session.
+        // Reset any prior session so we never double-install a tap.
         stopListening()
 
-        let audioSession = AVAudioSession.sharedInstance()
-        try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
-        try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+        do {
+            let audioSession = AVAudioSession.sharedInstance()
+            try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
+            try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+        } catch {
+            throw SpeechError.audioEngineFailed
+        }
 
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
         self.request = request
 
         let inputNode = audioEngine.inputNode
+        // Always clear any existing tap first — installing a second tap on the
+        // same bus traps. removeTap is a safe no-op when none is installed.
+        inputNode.removeTap(onBus: 0)
+
         let format = inputNode.outputFormat(forBus: 0)
-        // `installTap` traps (EXC_BREAKPOINT) if the hardware format is invalid —
-        // which happens on the Simulator and when no microphone is available.
-        // Validate first and fail gracefully instead of crashing.
+        // installTap also traps if the format is invalid (no/!ready hardware).
         guard format.sampleRate > 0, format.channelCount > 0 else {
             self.request = nil
             try? AVAudioSession.sharedInstance().setActive(false)
@@ -114,13 +128,16 @@ final class SpeechService: NSObject {
                 Task { @MainActor in self.stopListening() }
             }
         }
+        #endif
     }
 
     func stopListening() {
+        #if !targetEnvironment(simulator)
         if audioEngine.isRunning {
             audioEngine.stop()
-            audioEngine.inputNode.removeTap(onBus: 0)
         }
+        audioEngine.inputNode.removeTap(onBus: 0)
+        #endif
         request?.endAudio()
         task?.cancel()
         request = nil
