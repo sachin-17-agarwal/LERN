@@ -24,12 +24,26 @@ final class AudioService: NSObject {
         configureAudioSession()
 
         let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = AVSpeechSynthesisVoice(language: Constants.Audio.germanLanguageCode)
+        utterance.voice = bestGermanVoice
         utterance.rate = Constants.Audio.speechRate
         utterance.pitchMultiplier = Constants.Audio.pitch
         synthesizer.speak(utterance)
         isSpeaking = true
     }
+
+    /// The highest-quality German voice installed on the device. Apple ships a
+    /// robotic "compact" voice by default; "enhanced"/"premium" voices sound far
+    /// more natural but must be downloaded by the user (Settings → Accessibility
+    /// → Spoken Content → Voices → Deutsch). We pick the best one available.
+    @ObservationIgnored
+    private lazy var bestGermanVoice: AVSpeechSynthesisVoice? = {
+        let german = AVSpeechSynthesisVoice.speechVoices()
+            .filter { $0.language.hasPrefix("de") }
+        return german.first(where: { $0.quality == .premium })
+            ?? german.first(where: { $0.quality == .enhanced })
+            ?? german.first(where: { $0.language == Constants.Audio.germanLanguageCode })
+            ?? AVSpeechSynthesisVoice(language: Constants.Audio.germanLanguageCode)
+    }()
 
     /// Speaks a vocabulary word together with its plural, e.g. "der Tisch, die Tische".
     func speakWordWithArticle(_ word: VocabularyItem) {
