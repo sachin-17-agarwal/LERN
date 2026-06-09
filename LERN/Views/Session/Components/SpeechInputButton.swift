@@ -6,7 +6,8 @@ struct SpeechInputButton: View {
     @Binding var text: String
 
     @State private var speech = SpeechService()
-    @State private var permissionDenied = false
+    @State private var showError = false
+    @State private var errorMessage = ""
     @State private var listenTask: Task<Void, Never>?
 
     var body: some View {
@@ -20,10 +21,10 @@ struct SpeechInputButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(speech.isListening ? "Stop dictation" : "Start dictation")
-        .alert("Microphone unavailable", isPresented: $permissionDenied) {
+        .alert("Dictation unavailable", isPresented: $showError) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("Speech recognition permission was denied. You can type your answer instead.")
+            Text(errorMessage)
         }
     }
 
@@ -36,7 +37,11 @@ struct SpeechInputButton: View {
         listenTask = Task {
             let granted = await speech.requestAuthorization()
             guard granted else {
-                permissionDenied = true
+                present("Microphone and speech permission are needed for dictation. You can type your answer instead.")
+                return
+            }
+            guard speech.isAvailable else {
+                present("German speech recognition isn't available here. On the Simulator there's no microphone — try a real device, or type your answer.")
                 return
             }
             do {
@@ -45,8 +50,14 @@ struct SpeechInputButton: View {
                     text = partial
                 }
             } catch {
-                permissionDenied = true
+                let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+                present(message)
             }
         }
+    }
+
+    private func present(_ message: String) {
+        errorMessage = message
+        showError = true
     }
 }

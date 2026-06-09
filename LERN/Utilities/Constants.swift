@@ -21,7 +21,7 @@ enum Constants {
 
     enum Audio {
         static let germanLanguageCode = "de-DE"
-        static let speechRate: Float = 0.45   // Slightly slower than default for learners
+        static let speechRate: Float = 0.5    // Natural default rate — slower compact voices lose flow
         static let pitch: Float = 1.0
     }
 
