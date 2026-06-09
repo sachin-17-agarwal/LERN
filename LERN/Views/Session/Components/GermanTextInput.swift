@@ -1,12 +1,12 @@
 import SwiftUI
 
-/// A text field tuned for German input, with optional dictation and a quick
-/// row of umlaut/eszett characters for fast entry.
+/// A text field tuned for German input, with a quick row of umlaut/eszett
+/// characters. For dictation, users tap the microphone on the iOS keyboard —
+/// which does reliable German speech-to-text without any in-app audio handling.
 struct GermanTextInput: View {
     let placeholder: String
     @Binding var text: String
     var showSpecialCharacters: Bool = true
-    var showDictation: Bool = true
     var onSubmit: (() -> Void)? = nil
 
     @FocusState private var focused: Bool
@@ -22,10 +22,6 @@ struct GermanTextInput: View {
                     .focused($focused)
                     .lineLimit(1...4)
                     .onSubmit { onSubmit?() }
-
-                if showDictation {
-                    SpeechInputButton(text: $text)
-                }
             }
             .padding(12)
             .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 12))
