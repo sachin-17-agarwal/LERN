@@ -18,12 +18,18 @@ final class AudioService: NSObject {
     }
 
     /// Speaks German text aloud at a learner-friendly rate.
-    func speak(_ text: String) {
-        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+    /// - Parameter extractGermanOnly: when true (for mixed-language tutor
+    ///   messages), only the German portions are spoken so the German voice
+    ///   doesn't mangle English words.
+    func speak(_ text: String, extractGermanOnly: Bool = false) {
+        let toSpeak = extractGermanOnly
+            ? SpeechTextProcessor.germanOnly(from: text)
+            : SpeechTextProcessor.clean(text)
+        guard !toSpeak.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         stop()
         configureAudioSession()
 
-        let utterance = AVSpeechUtterance(string: text)
+        let utterance = AVSpeechUtterance(string: toSpeak)
         utterance.voice = bestGermanVoice
         utterance.rate = Constants.Audio.speechRate
         utterance.pitchMultiplier = Constants.Audio.pitch

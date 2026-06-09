@@ -18,7 +18,7 @@ struct AIMessageBubble: View {
                     .textSelection(.enabled)
 
                 if !isUser && !message.content.isEmpty {
-                    AudioPlayButton(text: message.content, compact: true)
+                    AudioPlayButton(text: message.content, compact: true, germanOnly: true)
                 }
             }
             .padding(12)

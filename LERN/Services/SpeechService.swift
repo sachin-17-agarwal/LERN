@@ -69,6 +69,15 @@ final class SpeechService: NSObject {
 
         let inputNode = audioEngine.inputNode
         let format = inputNode.outputFormat(forBus: 0)
+        // `installTap` traps (EXC_BREAKPOINT) if the hardware format is invalid —
+        // which happens on the Simulator and when no microphone is available.
+        // Validate first and fail gracefully instead of crashing.
+        guard format.sampleRate > 0, format.channelCount > 0 else {
+            self.request = nil
+            try? AVAudioSession.sharedInstance().setActive(false)
+            throw SpeechError.audioEngineFailed
+        }
+
         // The tap fires on a real-time audio thread. Capture the request directly
         // (marked unsafe) rather than touching main-actor-isolated `self`.
         nonisolated(unsafe) let capturedRequest = request
@@ -80,6 +89,8 @@ final class SpeechService: NSObject {
         do {
             try audioEngine.start()
         } catch {
+            inputNode.removeTap(onBus: 0)
+            self.request = nil
             throw SpeechError.audioEngineFailed
         }
         isListening = true
