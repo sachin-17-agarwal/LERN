@@ -45,7 +45,7 @@ struct KeychainManager {
     }
 
     /// Retrieve a string value for the given account, or nil if absent.
-    static func get(account: String) -> String? {
+    static func read(account: String) -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -77,7 +77,7 @@ struct KeychainManager {
     // MARK: - Convenience for the API key
 
     static var apiKey: String? {
-        get(account: apiKeyAccount)
+        read(account: apiKeyAccount)
     }
 
     static func setAPIKey(_ key: String) throws {
