@@ -39,10 +39,15 @@ struct SessionStartCard: View {
         .frame(maxWidth: .infinity)
         .background(
             LinearGradient(
-                colors: [Color.lernPrimary, Color.lernPrimary.opacity(0.8)],
+                colors: [
+                    Color.lernPrimary,
+                    Color.lernPrimary.opacity(0.85),
+                    Color(red: 0.36, green: 0.30, blue: 0.66)
+                ],
                 startPoint: .topLeading, endPoint: .bottomTrailing
             ),
             in: RoundedRectangle(cornerRadius: 20)
         )
+        .shadow(color: Color.lernPrimary.opacity(0.3), radius: 10, y: 5)
     }
 }

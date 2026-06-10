@@ -8,9 +8,13 @@ struct ReviewPhaseView: View {
     var body: some View {
         VStack(spacing: 20) {
             if let item = viewModel.currentReviewItem {
-                Text(viewModel.reviewProgressText)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                VStack(spacing: 6) {
+                    ProgressView(value: Double(viewModel.reviewIndex), total: Double(max(viewModel.reviewItems.count, 1)))
+                        .tint(.lernPrimary)
+                    Text(viewModel.reviewProgressText)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
 
                 switch item {
                 case .vocabulary(let vocab):
@@ -70,19 +74,30 @@ struct ReviewPhaseView: View {
         VStack(spacing: 12) {
             Text("What does this mean?").font(.headline)
             HStack(spacing: 8) {
-                Text(vocab.german).font(.largeTitle.weight(.bold))
+                Text(vocab.german)
+                    .font(.largeTitle.weight(.bold))
+                    .foregroundStyle(vocab.article == nil || !revealed ? Color.primary : Color.forArticle(vocab.article))
                 AudioPlayButton(text: vocab.german)
             }
             if revealed {
                 Text(vocab.english).font(.title2).foregroundStyle(Color.lernSuccess)
+                if let plural = vocab.plural {
+                    Text("Plural: \(plural)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
                 if !vocab.exampleSentence.isEmpty {
-                    Text(vocab.exampleSentence).font(.subheadline).foregroundStyle(.secondary)
+                    Text(vocab.exampleSentence)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
                 }
             }
         }
         .frame(maxWidth: .infinity)
         .padding()
         .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 16))
+        .animation(.easeInOut(duration: 0.2), value: revealed)
     }
 
     @ViewBuilder

@@ -38,6 +38,12 @@ final class SessionViewModel: Identifiable {
     var lessonInput: String = ""
     var isStreaming: Bool = false
     private var streamingMessageID: UUID?
+    private var openerMessageID: UUID?
+
+    /// Messages to render in the chat — hides the synthetic kick-off instruction.
+    var visibleMessages: [Message] {
+        messages.filter { $0.id != openerMessageID }
+    }
 
     // MARK: - Production phase
     var productionText: String = ""
@@ -81,7 +87,7 @@ final class SessionViewModel: Identifiable {
     // MARK: - Review phase
 
     private func loadReviewItems() {
-        reviewItems = srs.getDueReviewItems(for: profile, limit: 3)
+        reviewItems = srs.getDueReviewItems(for: profile, limit: 8)
     }
 
     var currentReviewItem: ReviewItem? {
@@ -123,8 +129,14 @@ final class SessionViewModel: Identifiable {
     /// Kicks off the lesson with an opening tutor turn.
     func startLesson() async {
         guard messages.isEmpty else { return }
-        // Seed with a user "start" instruction so the model opens the lesson.
-        let opener = Message(role: .user, content: "Lass uns mit der Lektion beginnen. Bitte führe das Grammatikthema dieser Woche ein und lass mich Sätze bilden.")
+        // Seed with a hidden user "start" instruction so the model opens the
+        // lesson. Kept in English: the system prompt decides the teaching
+        // language, and a week-1 beginner shouldn't see German meta-talk.
+        let opener = Message(
+            role: .user,
+            content: "Begin today's lesson now. Start with the warm-up, then introduce this week's grammar topic and get me producing sentences."
+        )
+        openerMessageID = opener.id
         messages.append(opener)
         await streamTutorReply()
     }
@@ -138,21 +150,40 @@ final class SessionViewModel: Identifiable {
         await streamTutorReply()
     }
 
+    /// Builds the Sendable AI context for the given phase. Called on the main
+    /// actor so no @Model object crosses into the nonisolated networking code.
+    private func makeContext(phase: SessionPhase, history: [Message]) -> SessionContext {
+        let grammar = CurriculumService.getGrammarContent(week: weekData.weekNumber)
+        let vocabulary = CurriculumService.getVocabularyList(week: weekData.weekNumber)
+            .map { item -> String in
+                var entry = "\(item.german) — \(item.english)"
+                if let plural = item.plural { entry += " (pl. \(plural))" }
+                return entry
+            }
+        return SessionContext(
+            weekNumber: weekData.weekNumber,
+            grammarTopic: weekData.grammarTopic,
+            grammarSubtopics: weekData.grammarSubtopics,
+            grammarExplanation: grammar.explanation,
+            grammarCommonMistakes: grammar.commonMistakes,
+            vocabularyDomain: weekData.vocabularyDomain,
+            weekVocabulary: vocabulary,
+            productionPrompt: weekData.productionPrompt,
+            skillFocus: weekData.skillFocus,
+            userLevel: profile.currentLevel,
+            recurringErrors: ErrorAnalysis.topRecurringCategories(for: profile),
+            skillScores: profile.skillScores,
+            sessionPhase: phase,
+            conversationHistory: history
+        )
+    }
+
     private func streamTutorReply() async {
         errorMessage = nil
         isStreaming = true
         defer { isStreaming = false }
 
-        let context = SessionContext(
-            weekNumber: weekData.weekNumber,
-            grammarTopic: weekData.grammarTopic,
-            vocabularyDomain: weekData.vocabularyDomain,
-            userLevel: profile.currentLevel,
-            recurringErrors: ErrorAnalysis.topRecurringCategories(for: profile),
-            skillScores: profile.skillScores,
-            sessionPhase: .lesson,
-            conversationHistory: messages
-        )
+        let context = makeContext(phase: .lesson, history: messages)
 
         let assistantMessage = Message(role: .assistant, content: "")
         streamingMessageID = assistantMessage.id
@@ -182,18 +213,7 @@ final class SessionViewModel: Identifiable {
         isAnalysing = true
         defer { isAnalysing = false }
 
-        // Build the Sendable context here on the main actor so no @Model object
-        // crosses into the nonisolated networking code.
-        let context = SessionContext(
-            weekNumber: weekData.weekNumber,
-            grammarTopic: weekData.grammarTopic,
-            vocabularyDomain: weekData.vocabularyDomain,
-            userLevel: profile.currentLevel,
-            recurringErrors: ErrorAnalysis.topRecurringCategories(for: profile),
-            skillScores: profile.skillScores,
-            sessionPhase: .production,
-            conversationHistory: []
-        )
+        let context = makeContext(phase: .production, history: [])
 
         do {
             let analysis = try await anthropic.analyseProduction(

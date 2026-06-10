@@ -26,9 +26,12 @@ AI-tutored study companion built with SwiftUI, SwiftData, and the Anthropic API.
 - **UI:** SwiftUI, MVVM, `@Observable` view models, `@Environment` injection
 - **Persistence:** SwiftData (`UserProfile`, `StudySession`, `ErrorRecord`,
   `VocabularyItem`, `GrammarTopic`, `ExamResult`)
-- **AI tutoring:** Anthropic Messages API (`claude-sonnet-4-20250514`) via
-  `URLSession`, with streaming for live dialogue and structured JSON for
-  production analysis and mock exams
+- **AI tutoring:** Anthropic Messages API via `URLSession` — `claude-sonnet-4-6`
+  for the streaming tutor dialogue (fast first token), `claude-opus-4-8` for
+  production analysis and mock exam generation (where judgment matters most).
+  The tutor's system prompt is built from the week's full curriculum content:
+  grammar rules, subtopics, common mistakes, target vocabulary, and the
+  production goal
 - **Audio:** `AVSpeechSynthesizer` (de-DE TTS) and `SFSpeechRecognizer` (de-DE STT)
 - **Spaced repetition:** SM-2 algorithm over errors and vocabulary
 - **Charts:** Swift Charts for the trajectory, heatmap, and error-pattern views
@@ -59,10 +62,22 @@ Each study session runs three phases:
 
 Weekend sessions automatically switch to a longer "Deep Dive" mode.
 
+## Curriculum content
+
+- The 28-week plan in `Curriculum/CurriculumData.swift` is the source of truth
+  for grammar topics, vocabulary domains, and production prompts.
+- `Curriculum/GrammarContent/` holds a full written lesson for every week:
+  rule explanation, 6–8 example sentences, and the typical mistakes for that
+  topic. The same content feeds both the Curriculum tab and the AI tutor.
+- `Curriculum/VocabularyLists/` holds ~480 words across the 28 weeks
+  (about 20 per content week, exam-strategy vocabulary in weeks 23–26), each
+  with article, plural, English gloss, and an example sentence.
+- Each week's vocabulary is seeded into the profile when the week unlocks and
+  scheduled by SM-2, so the Review phase mixes vocabulary recall with error
+  corrections automatically.
+
 ## Notes
 
 - The AI conversation for a session lives only in memory; only structured
   outputs (errors, sessions, exam results) are persisted.
-- The 28-week curriculum in `Curriculum/CurriculumData.swift` is the source of
-  truth for grammar topics, vocabulary domains, and production prompts.
 - API failures surface an inline retry without losing the user's written German.

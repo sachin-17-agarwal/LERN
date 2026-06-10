@@ -24,7 +24,12 @@ struct AIMessageBubble: View {
             .padding(12)
             .background(
                 isUser ? Color.lernPrimary : Color.lernSurface,
-                in: RoundedRectangle(cornerRadius: 16)
+                in: UnevenRoundedRectangle(
+                    topLeadingRadius: 18,
+                    bottomLeadingRadius: isUser ? 18 : 6,
+                    bottomTrailingRadius: isUser ? 6 : 18,
+                    topTrailingRadius: 18
+                )
             )
 
             if !isUser { Spacer(minLength: 40) }

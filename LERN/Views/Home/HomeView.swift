@@ -86,17 +86,17 @@ struct HomeView: View {
 
             // Quick actions
             HStack(spacing: 12) {
-                quickAction("Vocabulary", systemImage: "character.book.closed", count: vm.dueReviewCount()) {
+                quickAction("Review", systemImage: "rectangle.stack", count: vm.dueReviewCount()) {
                     startSession(profile: profile)
                 }
-                quickAction("Grammar", systemImage: "text.book.closed", count: nil) {
-                    startSession(profile: profile)
+                quickAction("Curriculum", systemImage: "map", count: nil) {
+                    appState.selectedTab = .curriculum
                 }
                 quickAction("Pronunciation", systemImage: "waveform", count: nil) {
                     showPronunciation = true
                 }
                 quickAction("Mock Exam", systemImage: "checkmark.seal", count: nil) {
-                    startSession(profile: profile)
+                    appState.selectedTab = .exam
                 }
             }
         }

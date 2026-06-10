@@ -37,6 +37,7 @@ struct AnthropicService {
     // MARK: - Request building
 
     private func makeRequest(
+        model: String,
         system: String,
         messages: [Message],
         stream: Bool,
@@ -56,7 +57,7 @@ struct AnthropicService {
         request.setValue("application/json", forHTTPHeaderField: "content-type")
 
         let body: [String: Any] = [
-            "model": Constants.API.model,
+            "model": model,
             "max_tokens": maxTokens,
             "stream": stream,
             "system": system,
@@ -76,7 +77,7 @@ struct AnthropicService {
         return AsyncThrowingStream { continuation in
             let task = Task {
                 do {
-                    let request = try makeRequest(system: system, messages: messages, stream: true)
+                    let request = try makeRequest(model: Constants.API.dialogueModel, system: system, messages: messages, stream: true)
                     let (bytes, response) = try await session.bytes(for: request)
 
                     guard let http = response as? HTTPURLResponse else {
@@ -113,11 +114,12 @@ struct AnthropicService {
 
     /// Sends a single request and returns the full assembled text.
     func complete(
+        model: String = Constants.API.dialogueModel,
         system: String,
         messages: [Message],
         maxTokens: Int = Constants.API.maxTokens
     ) async throws -> String {
-        let request = try makeRequest(system: system, messages: messages, stream: false, maxTokens: maxTokens)
+        let request = try makeRequest(model: model, system: system, messages: messages, stream: false, maxTokens: maxTokens)
         let (data, response) = try await session.data(for: request)
 
         guard let http = response as? HTTPURLResponse else {
@@ -149,6 +151,7 @@ struct AnthropicService {
         let userMessage = Message(role: .user, content: germanText)
 
         let raw = try await complete(
+            model: Constants.API.analysisModel,
             system: system,
             messages: [userMessage],
             maxTokens: Constants.API.maxTokensProduction
@@ -210,7 +213,7 @@ struct AnthropicService {
         For writing and speaking, set correctAnswer to null (they are AI-graded).
         """
         let userMessage = Message(role: .user, content: "Generate the \(skill.germanName) section now.")
-        let raw = try await complete(system: system, messages: [userMessage], maxTokens: Constants.API.maxTokensProduction)
+        let raw = try await complete(model: Constants.API.analysisModel, system: system, messages: [userMessage], maxTokens: Constants.API.maxTokensProduction)
         let cleaned = raw.strippingCodeFences
         guard let data = cleaned.data(using: .utf8) else {
             throw AnthropicError.decodingFailed("exam section was not valid UTF-8")
