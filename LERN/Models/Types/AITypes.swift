@@ -23,7 +23,13 @@ struct Message: Identifiable, Codable, Equatable, Sendable {
 struct SessionContext: Sendable {
     let weekNumber: Int
     let grammarTopic: String
+    let grammarSubtopics: [String]
+    let grammarExplanation: String         // The week's rule summary from GrammarLibrary
+    let grammarCommonMistakes: [String]
     let vocabularyDomain: String
+    let weekVocabulary: [String]           // Formatted "der Tisch — table" target words
+    let productionPrompt: String           // The week's free-production goal
+    let skillFocus: SkillType
     let userLevel: CurriculumLevel
     let recurringErrors: [ErrorCategory]   // Top 3 most frequent unresolved errors
     let skillScores: [SkillType: Double]

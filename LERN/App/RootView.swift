@@ -33,6 +33,7 @@ struct RootView: View {
             // Ensure a profile exists on first launch and curriculum is seeded.
             let profile = appState.currentProfile(in: modelContext)
             CurriculumService.seedGrammarTopicsIfNeeded(for: profile, in: modelContext)
+            CurriculumService.seedVocabularyIfNeeded(for: profile, in: modelContext)
         }
     }
 }

@@ -5,10 +5,10 @@ enum Constants {
 
     enum API {
         static let baseURL = "https://api.anthropic.com/v1/messages"
-        static let model = "claude-sonnet-4-20250514"
+        static let model = "claude-opus-4-8"
         static let anthropicVersion = "2023-06-01"
-        static let maxTokens = 1024
-        static let maxTokensProduction = 2048
+        static let maxTokens = 2048
+        static let maxTokensProduction = 4096
     }
 
     enum Curriculum {

@@ -9,7 +9,7 @@ struct LessonPhaseView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(spacing: 12) {
-                        ForEach(viewModel.messages.filter { !($0.role == .user && $0.content.hasPrefix("Lass uns mit der Lektion")) }) { message in
+                        ForEach(viewModel.visibleMessages) { message in
                             AIMessageBubble(
                                 message: message,
                                 isStreaming: viewModel.isStreaming && message.content.isEmpty
