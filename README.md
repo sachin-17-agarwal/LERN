@@ -26,11 +26,12 @@ AI-tutored study companion built with SwiftUI, SwiftData, and the Anthropic API.
 - **UI:** SwiftUI, MVVM, `@Observable` view models, `@Environment` injection
 - **Persistence:** SwiftData (`UserProfile`, `StudySession`, `ErrorRecord`,
   `VocabularyItem`, `GrammarTopic`, `ExamResult`)
-- **AI tutoring:** Anthropic Messages API (`claude-opus-4-8`) via
-  `URLSession`, with streaming for live dialogue and structured JSON for
-  production analysis and mock exams. The tutor's system prompt is built from
-  the week's full curriculum content: grammar rules, subtopics, common
-  mistakes, target vocabulary, and the production goal
+- **AI tutoring:** Anthropic Messages API via `URLSession` — `claude-sonnet-4-6`
+  for the streaming tutor dialogue (fast first token), `claude-opus-4-8` for
+  production analysis and mock exam generation (where judgment matters most).
+  The tutor's system prompt is built from the week's full curriculum content:
+  grammar rules, subtopics, common mistakes, target vocabulary, and the
+  production goal
 - **Audio:** `AVSpeechSynthesizer` (de-DE TTS) and `SFSpeechRecognizer` (de-DE STT)
 - **Spaced repetition:** SM-2 algorithm over errors and vocabulary
 - **Charts:** Swift Charts for the trajectory, heatmap, and error-pattern views

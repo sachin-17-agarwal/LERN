@@ -46,12 +46,27 @@ struct WeekDetailSheet: View {
                     }
 
                     if !vocabulary.isEmpty {
-                        section("Vocabulary: \(week.vocabularyDomain)") {
+                        section("Vocabulary: \(week.vocabularyDomain) (\(vocabulary.count) words)") {
                             VStack(spacing: 8) {
                                 ForEach(vocabulary) { word in
-                                    HStack {
-                                        VStack(alignment: .leading) {
-                                            Text(word.german).fontWeight(.medium)
+                                    HStack(alignment: .top, spacing: 10) {
+                                        if let article = word.article {
+                                            Text(article)
+                                                .font(.caption2.weight(.bold))
+                                                .foregroundStyle(.white)
+                                                .padding(.horizontal, 6).padding(.vertical, 3)
+                                                .background(Color.forArticle(article), in: Capsule())
+                                                .padding(.top, 2)
+                                        }
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(word.german)
+                                                .fontWeight(.medium)
+                                                .foregroundStyle(word.article == nil ? Color.primary : Color.forArticle(word.article))
+                                            if let plural = word.plural {
+                                                Text("Plural: \(plural)")
+                                                    .font(.caption2)
+                                                    .foregroundStyle(.tertiary)
+                                            }
                                             Text(word.english).font(.caption).foregroundStyle(.secondary)
                                         }
                                         Spacer()

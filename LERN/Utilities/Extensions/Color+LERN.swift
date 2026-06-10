@@ -25,6 +25,18 @@ extension Color {
         }
     }
 
+    /// Colour-coding for noun gender — the classic learner convention:
+    /// der = blue, die = rose, das = green. Seeing the colour every time a
+    /// noun appears helps the gender stick.
+    static func forArticle(_ article: String?) -> Color {
+        switch article {
+        case "der": return Color(red: 0.25, green: 0.45, blue: 0.85)
+        case "die": return Color(red: 0.85, green: 0.30, blue: 0.45)
+        case "das": return Color(red: 0.20, green: 0.62, blue: 0.40)
+        default:    return .secondary
+        }
+    }
+
     /// Colour associated with a skill for gauges.
     static func forSkill(_ skill: SkillType) -> Color {
         switch skill {

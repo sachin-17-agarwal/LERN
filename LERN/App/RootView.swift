@@ -11,21 +11,27 @@ struct RootView: View {
     @State private var audioService = AudioService()
 
     var body: some View {
-        TabView {
+        @Bindable var appState = appState
+        TabView(selection: $appState.selectedTab) {
             HomeView()
                 .tabItem { Label("Home", systemImage: "house.fill") }
+                .tag(AppTab.home)
 
             CurriculumView()
                 .tabItem { Label("Curriculum", systemImage: "map.fill") }
+                .tag(AppTab.curriculum)
 
             ProgressDashboardView()
                 .tabItem { Label("Progress", systemImage: "chart.line.uptrend.xyaxis") }
+                .tag(AppTab.progress)
 
             ExamPrepView()
                 .tabItem { Label("Exam", systemImage: "checkmark.seal.fill") }
+                .tag(AppTab.exam)
 
             SettingsView()
                 .tabItem { Label("Settings", systemImage: "gearshape.fill") }
+                .tag(AppTab.settings)
         }
         .tint(.lernPrimary)
         .environment(audioService)

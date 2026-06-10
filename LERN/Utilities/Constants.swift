@@ -5,7 +5,12 @@ enum Constants {
 
     enum API {
         static let baseURL = "https://api.anthropic.com/v1/messages"
-        static let model = "claude-opus-4-8"
+        /// Fast model for the streaming tutor dialogue and review questions —
+        /// snappier first token keeps the chat feeling conversational.
+        static let dialogueModel = "claude-sonnet-4-6"
+        /// Stronger model for production analysis and mock exam generation,
+        /// where missed errors or miscalibrated questions are costly.
+        static let analysisModel = "claude-opus-4-8"
         static let anthropicVersion = "2023-06-01"
         static let maxTokens = 2048
         static let maxTokensProduction = 4096

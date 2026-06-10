@@ -23,6 +23,7 @@ struct PhaseProgressBar: View {
             HStack {
                 Image(systemName: "clock")
                 Text(elapsed)
+                    .monospacedDigit()
                 Spacer()
                 Text(currentPhase.title)
                     .fontWeight(.semibold)
@@ -30,6 +31,7 @@ struct PhaseProgressBar: View {
             .font(.caption)
             .foregroundStyle(.secondary)
         }
+        .animation(.easeInOut(duration: 0.3), value: currentPhase)
     }
 
     private func color(for phase: SessionPhase) -> Color {
