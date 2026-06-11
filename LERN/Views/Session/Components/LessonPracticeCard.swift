@@ -13,18 +13,10 @@ struct LessonPracticeCard: View {
 
     var body: some View {
         VStack(spacing: 10) {
-            HStack {
-                Label("Say it aloud", systemImage: "mic.fill")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(Color.lernPrimary)
-                Spacer()
-                Button(action: onDismiss) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.tertiary)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Skip speaking practice")
-            }
+            Label("Say it aloud", systemImage: "mic.fill")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.lernPrimary)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             HStack(spacing: 8) {
                 Text(sentence)
@@ -54,26 +46,34 @@ struct LessonPracticeCard: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            Button {
-                Task {
-                    if scorer.isRecording {
-                        if let result = await scorer.stopAndAssess(referenceText: sentence) {
-                            onResult(result)
-                        }
-                    } else {
-                        await scorer.startRecording()
-                    }
+            HStack(spacing: 10) {
+                Button("Skip") {
+                    onDismiss()
                 }
-            } label: {
-                Label(scorer.isRecording ? "Stop & score" : "Record",
-                      systemImage: scorer.isRecording ? "stop.fill" : "mic.fill")
-                    .font(.subheadline.weight(.semibold))
-                    .frame(maxWidth: .infinity)
+                .buttonStyle(.bordered)
+                .disabled(scorer.isRecording || scorer.isAssessing)
+
+                Button {
+                    Task {
+                        if scorer.isRecording {
+                            if let result = await scorer.stopAndAssess(referenceText: sentence) {
+                                onResult(result)
+                            }
+                        } else {
+                            await scorer.startRecording()
+                        }
+                    }
+                } label: {
+                    Label(scorer.isRecording ? "Stop & score" : "Record",
+                          systemImage: scorer.isRecording ? "stop.fill" : "mic.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(scorer.isRecording ? Color.lernError : Color.lernPrimary)
+                .disabled(scorer.isAssessing || !scorer.hasCredentials)
+                .symbolEffect(.pulse, isActive: scorer.isRecording)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(scorer.isRecording ? Color.lernError : Color.lernPrimary)
-            .disabled(scorer.isAssessing || !scorer.hasCredentials)
-            .symbolEffect(.pulse, isActive: scorer.isRecording)
         }
         .padding(12)
         .background(Color.lernPrimary.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))

@@ -4,11 +4,11 @@ import AVFoundation
 
 /// Records a short utterance to a WAV file and scores it against a reference
 /// sentence using Azure pronunciation assessment. Reusable wherever speaking
-/// practice is embedded — the lesson chat's inline practice card uses one
-/// instance per exercise.
+/// practice is embedded — the lesson chat's practice card and the
+/// Pronunciation tool both drive one of these.
 @Observable
 @MainActor
-final class SpeechScorer {
+final class SpeechScorer: NSObject, AVAudioRecorderDelegate {
 
     private let azure = AzureSpeechService()
 
@@ -20,8 +20,14 @@ final class SpeechScorer {
 
     private var recorder: AVAudioRecorder?
     private var recordingURL: URL?
+    private var finishContinuation: CheckedContinuation<Bool, Never>?
 
     var hasCredentials: Bool { KeychainManager.hasAzureCredentials }
+
+    func reset() {
+        result = nil
+        errorMessage = nil
+    }
 
     // MARK: - Permission
 
@@ -42,7 +48,7 @@ final class SpeechScorer {
         }
     }
 
-    // MARK: - Recording (file-based, same approach as the Pronunciation tool)
+    // MARK: - Recording (file-based)
 
     func startRecording() async {
         errorMessage = nil
@@ -59,7 +65,7 @@ final class SpeechScorer {
             try session.setActive(true)
 
             let url = FileManager.default.temporaryDirectory
-                .appendingPathComponent("lern_lesson_pron_\(UUID().uuidString).wav")
+                .appendingPathComponent("lern_pron_\(UUID().uuidString).wav")
             recordingURL = url
 
             // 16 kHz mono 16-bit linear PCM WAV — exactly what Azure expects.
@@ -73,6 +79,7 @@ final class SpeechScorer {
             ]
 
             let recorder = try AVAudioRecorder(url: url, settings: settings)
+            recorder.delegate = self
             guard recorder.record() else {
                 throw AzureSpeechError.invalidResponse
             }
@@ -85,26 +92,67 @@ final class SpeechScorer {
     }
 
     /// Stops recording, scores the audio against `referenceText`, and returns
-    /// the result (also kept in `result` for the UI).
+    /// the result. Returns nil (with `errorMessage` set) for takes Azure
+    /// couldn't hear — too short, truncated, or silent — so callers never
+    /// treat a dead recording as a real 0/100 score.
     @discardableResult
     func stopAndAssess(referenceText: String) async -> PronunciationResult? {
         guard isRecording, let recorder, let url = recordingURL else { return nil }
-        recorder.stop()
+        let duration = recorder.currentTime
+
+        // Wait for the recorder to finalise the WAV before reading it.
+        // Reading immediately after stop() races the file finalisation and
+        // can upload a truncated file that Azure scores as pure silence.
+        await withCheckedContinuation { (cont: CheckedContinuation<Bool, Never>) in
+            finishContinuation = cont
+            recorder.stop()
+            // Safety net: never hang if the delegate callback is lost.
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .seconds(2))
+                if let pending = self?.finishContinuation {
+                    self?.finishContinuation = nil
+                    pending.resume(returning: true)
+                }
+            }
+        }
         self.recorder = nil
         isRecording = false
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+
+        defer {
+            try? FileManager.default.removeItem(at: url)
+            recordingURL = nil
+        }
+
+        guard duration >= 0.7 else {
+            errorMessage = "That take was too short. Tap Record, say the whole sentence, then tap Stop."
+            return nil
+        }
 
         isAssessing = true
         defer { isAssessing = false }
         do {
             let assessment = try await azure.assess(audioURL: url, referenceText: referenceText)
+            // All-zero with nothing recognised means Azure heard silence —
+            // a broken take, not a genuine score of zero.
+            guard assessment.pronunciation > 0 || !assessment.recognizedText.isEmpty else {
+                errorMessage = "No speech came through. Hold the phone closer, speak after tapping Record, and try again."
+                return nil
+            }
             result = assessment
+            return assessment
         } catch {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            return nil
         }
-        // Clean up the temp file.
-        try? FileManager.default.removeItem(at: url)
-        recordingURL = nil
-        return result
+    }
+
+    nonisolated func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
+        Task { @MainActor [weak self] in
+            if let pending = self?.finishContinuation {
+                self?.finishContinuation = nil
+                pending.resume(returning: flag)
+            }
+        }
     }
 }
