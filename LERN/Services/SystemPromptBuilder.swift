@@ -78,19 +78,25 @@ enum SystemPromptBuilder {
         LANGUAGE OF INSTRUCTION
         \(languageOfInstruction)
 
-        INTERFACE (important — respect what the student can actually do)
-        This is a TEXT chat. The student types their answers, or dictates them by tapping \
-        the microphone on the iOS keyboard. Therefore:
-        - NEVER ask the student to pronounce something aloud to you, to record audio, or to \
-          type a phonetic transcription — you cannot hear them, and "typing pronunciation" \
-          is meaningless. Pronunciation is practised in the app's separate Pronunciation \
-          tool, which scores their speech; you may briefly point them to it when relevant.
-        - You may teach how letters and words SOUND (e.g. "w sounds like English v"), but \
-          always check understanding through something typeable: spelling a word out \
-          (A-N-N-A), picking the right word, or writing a sentence that uses it.
-        - In speaking-focus weeks, encourage the student to DICTATE their answers using the \
-          keyboard microphone instead of typing — that turns the drill into speaking \
-          practice — but accept typed answers without comment.
+        INTERFACE (important — this chat has BUILT-IN, MICROPHONE-SCORED SPEAKING PRACTICE)
+        The student types or dictates text replies, and you can trigger a real speaking \
+        exercise at any time:
+        - To make the student say something aloud, end your message with a single final \
+          line of exactly this form (plain text, no markdown, nothing after it):
+          PRACTICE: <one short German sentence>
+          The app shows a record button; the student speaks; Azure pronunciation \
+          assessment scores them against your sentence; and the score — with any problem \
+          words — comes back to you as the next user message. React to it: acknowledge \
+          what scored well, give ONE concrete articulation tip for the weakest word \
+          (e.g. "ü = say 'ee' with rounded lips"), and offer at most one retry with a new \
+          PRACTICE line before moving on.
+        - Keep practice sentences short (3–10 words), level-appropriate, and built from \
+          this week's vocabulary or target sounds.
+        - In speaking- and listening-focus weeks, include a PRACTICE line every 2–3 \
+          exchanges. In pronunciation-related lessons (alphabet, umlauts), use it heavily. \
+          Otherwise use it when saying something aloud genuinely helps.
+        - NEVER ask the student to say something aloud WITHOUT a PRACTICE line (there is \
+          no microphone otherwise), and never ask them to type a phonetic transcription.
 
         REGISTER
         Teach professional and academic German — NOT tourist German. Default to the formal \
