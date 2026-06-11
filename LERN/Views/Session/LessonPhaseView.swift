@@ -31,6 +31,19 @@ struct LessonPhaseView: View {
 
             Divider()
 
+            if let sentence = viewModel.practiceSentence {
+                LessonPracticeCard(
+                    sentence: sentence,
+                    onResult: { result in
+                        Task { await viewModel.submitPronunciationResult(result, sentence: sentence) }
+                    },
+                    onDismiss: { viewModel.dismissPractice() }
+                )
+                .padding(.horizontal)
+                .padding(.top, 8)
+                .id(sentence)   // fresh recorder state per exercise
+            }
+
             HStack(spacing: 8) {
                 GermanTextInput(
                     placeholder: "Schreibe einen Satz…",

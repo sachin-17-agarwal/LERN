@@ -45,6 +45,55 @@ final class SessionViewModel: Identifiable {
         messages.filter { $0.id != openerMessageID }
     }
 
+    // MARK: - In-chat speaking practice
+
+    /// Sentence the tutor asked the student to say aloud, parsed from a
+    /// trailing "PRACTICE:" line in the reply. Drives the inline mic card,
+    /// which records the student and scores them via Azure.
+    var practiceSentence: String?
+
+    private static let practiceMarker = "PRACTICE:"
+
+    /// Pulls a trailing `PRACTICE: <sentence>` line out of the latest tutor
+    /// message so it renders as a mic card instead of chat text.
+    private func extractPracticeSentence() {
+        guard let idx = messages.lastIndex(where: { $0.role == .assistant }) else { return }
+        var lines = messages[idx].content.components(separatedBy: "\n")
+        guard let lineIdx = lines.lastIndex(where: {
+            $0.trimmingCharacters(in: .whitespaces).hasPrefix(Self.practiceMarker)
+        }) else { return }
+
+        let sentence = String(
+            lines[lineIdx].trimmingCharacters(in: .whitespaces).dropFirst(Self.practiceMarker.count)
+        ).trimmingCharacters(in: .whitespaces)
+
+        lines.remove(at: lineIdx)
+        messages[idx].content = lines.joined(separator: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if !sentence.isEmpty {
+            practiceSentence = sentence
+        }
+    }
+
+    /// Skips the current speaking exercise.
+    func dismissPractice() {
+        practiceSentence = nil
+    }
+
+    /// Posts the Azure pronunciation score into the dialogue so the tutor can
+    /// coach on it, then streams the tutor's reaction.
+    func submitPronunciationResult(_ result: PronunciationResult, sentence: String) async {
+        practiceSentence = nil
+        let problems = result.words.filter(\.isProblem).map(\.word)
+        var report = "🎤 I said: „\(sentence)“ — pronunciation score \(Int(result.pronunciation))/100" +
+            " (accuracy \(Int(result.accuracy)), fluency \(Int(result.fluency)), completeness \(Int(result.completeness)))."
+        if !problems.isEmpty {
+            report += " Problem words: \(problems.joined(separator: ", "))."
+        }
+        messages.append(Message(role: .user, content: report))
+        await streamTutorReply()
+    }
+
     // MARK: - Production phase
     var productionText: String = ""
     var productionAnalysis: ProductionAnalysis?
@@ -145,6 +194,7 @@ final class SessionViewModel: Identifiable {
     func sendLessonMessage() async {
         let trimmed = lessonInput.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
+        practiceSentence = nil    // typing past the mic card skips the exercise
         messages.append(Message(role: .user, content: trimmed))
         lessonInput = ""
         await streamTutorReply()
@@ -195,6 +245,7 @@ final class SessionViewModel: Identifiable {
                     messages[idx].content += delta
                 }
             }
+            extractPracticeSentence()
         } catch {
             // Remove the empty assistant bubble and surface the error.
             messages.removeAll { $0.id == streamingMessageID && $0.content.isEmpty }
