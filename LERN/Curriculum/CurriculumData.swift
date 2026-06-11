@@ -11,7 +11,7 @@ enum CurriculumData {
             grammarSubtopics: ["The German alphabet", "Umlauts ä/ö/ü", "ß (eszett)", "Letter sounds"],
             vocabularyDomain: "Greetings, classroom",
             targetNewWords: 20, skillFocus: .listening,
-            productionPrompt: "Stell dich vor: say hello and spell your name aloud in German.",
+            productionPrompt: "Stell dich vor: write a greeting, give your name, and spell it letter by letter in German (e.g. A-N-N-A).",
             examAlignment: "Hören — recognising sounds and spelling"
         ),
         CurriculumWeek(
@@ -74,7 +74,7 @@ enum CurriculumData {
             grammarSubtopics: ["Direct objects", "Accusative articles", "Accusative pronouns"],
             vocabularyDomain: "Food, drink, shopping",
             targetNewWords: 20, skillFocus: .speaking,
-            productionPrompt: "Role-play ordering food and shopping, using accusative objects.",
+            productionPrompt: "Write both sides of a dialogue: ordering food and shopping, using accusative objects.",
             examAlignment: "Sprechen — transactional dialogue"
         ),
         CurriculumWeek(
@@ -240,7 +240,7 @@ enum CurriculumData {
             grammarSubtopics: ["Sprechen Teil 1–3", "Asking for information", "Planning together"],
             vocabularyDomain: "All domains",
             targetNewWords: 10, skillFocus: .speaking,
-            productionPrompt: "Complete a role-play planning an activity with a partner.",
+            productionPrompt: "Write both sides of a Sprechen Teil 3 role-play: plan an activity with a partner, with suggestions and counter-proposals.",
             examAlignment: "Sprechen — full exam format"
         ),
 
