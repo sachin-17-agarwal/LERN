@@ -74,30 +74,9 @@ enum B1Grammar {
             ]
         )
     ]
-}
 
-/// Aggregates A1/A2/B1 grammar content with a graceful fallback.
-enum GrammarLibrary {
-    static func content(forWeek week: Int) -> GrammarContent {
-        if let c = A1Grammar.content[week] { return c }
-        if let c = A2Grammar.content[week] { return c }
-        if let c = B1Grammar.content[week] { return c }
-        if let c = B1Grammar.extendedContent[week] { return c }
+    // MARK: - B1 weeks 29-36
 
-        // Fallback derived from the curriculum data when no detailed entry exists.
-        let w = CurriculumService.week(week)
-        return GrammarContent(
-            topic: w.grammarTopic,
-            level: w.level,
-            explanation: "Focus this week on \(w.grammarTopic). Subtopics: \(w.grammarSubtopics.joined(separator: ", ")).",
-            examples: w.grammarSubtopics,
-            commonMistakes: []
-        )
-    }
-}
-
-// MARK: - B1 weeks 29–36 (appended)
-extension B1Grammar {
     static let extendedContent: [Int: GrammarContent] = [
         29: GrammarContent(
             topic: "Plusquamperfekt and nachdem/bevor",
@@ -395,4 +374,24 @@ extension B1Grammar {
             ]
         )
     ]
+}
+
+/// Aggregates A1/A2/B1 grammar content with a graceful fallback.
+enum GrammarLibrary {
+    static func content(forWeek week: Int) -> GrammarContent {
+        if let c = A1Grammar.content[week] { return c }
+        if let c = A2Grammar.content[week] { return c }
+        if let c = B1Grammar.content[week] { return c }
+        if let c = B1Grammar.extendedContent[week] { return c }
+
+        // Fallback derived from the curriculum data when no detailed entry exists.
+        let w = CurriculumService.week(week)
+        return GrammarContent(
+            topic: w.grammarTopic,
+            level: w.level,
+            explanation: "Focus this week on \(w.grammarTopic). Subtopics: \(w.grammarSubtopics.joined(separator: ", ")).",
+            examples: w.grammarSubtopics,
+            commonMistakes: []
+        )
+    }
 }
