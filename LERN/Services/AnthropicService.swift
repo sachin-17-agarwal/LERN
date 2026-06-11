@@ -203,14 +203,16 @@ struct AnthropicService {
     // MARK: - Mock exam section generation
 
     func generateMockExamSection(skill: SkillType, level: String) async throws -> ExamSection {
+        let formatGuide = mockExamFormatGuide(skill: skill, level: level)
         let system = """
-        You are an examiner generating a Goethe \(level) \(skill.germanName) section in \
-        authentic Goethe format and difficulty. Use professional/academic German register. \
-        Return ONLY JSON matching this schema:
+        You are a Goethe-Institut examiner generating an authentic \(level) mock exam section. \
+        Use professional/academic German register. Match exact Goethe format and difficulty. \
+        \(formatGuide)
+        Return ONLY valid JSON matching this schema (no prose, no code fences):
         {"skill":"\(skill.rawValue)","instructions":"...","passage":"... or null",
          "questions":[{"prompt":"...","options":["...","..."] or null,"correctAnswer":"... or null"}],
          "maxPoints": <number>}
-        For writing and speaking, set correctAnswer to null (they are AI-graded).
+        For Schreiben and Sprechen set correctAnswer to null — they are rubric-graded separately.
         """
         let userMessage = Message(role: .user, content: "Generate the \(skill.germanName) section now.")
         let raw = try await complete(model: Constants.API.analysisModel, system: system, messages: [userMessage], maxTokens: Constants.API.maxTokensProduction)
@@ -222,6 +224,74 @@ struct AnthropicService {
             return try JSONDecoder().decode(ExamSection.self, from: data)
         } catch {
             throw AnthropicError.decodingFailed(error.localizedDescription)
+        }
+    }
+
+    /// Returns a detailed format specification for a given skill/level combination,
+    /// so the model generates tasks that match the real Goethe exam structure.
+    private func mockExamFormatGuide(skill: SkillType, level: String) -> String {
+        switch (skill, level) {
+        case (.reading, "B1"):
+            return """
+            GOETHE B1 LESEN FORMAT (5 Teile, 45 min):
+            Generate Teil 2: provide a 300-word authentic-style article on a professional/social \
+            topic (e.g. remote work, volunteering, language learning) followed by 6 multiple-choice \
+            questions each with 3 options (a/b/c). One correct answer per question. maxPoints: 15.
+            """
+        case (.listening, "B1"):
+            return """
+            GOETHE B1 HÖREN FORMAT (4 Teile, ~40 min):
+            Generate Teil 2: write a 250-word radio interview transcript on a professional/social \
+            topic. Then generate 6 statements to mark as richtig (R) or falsch (F). \
+            Set options to ["richtig","falsch"] and correctAnswer to "richtig" or "falsch". maxPoints: 15.
+            The passage field should contain the interview transcript — the app plays it via TTS.
+            """
+        case (.writing, "B1"):
+            return """
+            GOETHE B1 SCHREIBEN FORMAT (2 Teile, 60 min):
+            Teil 1: Write a task prompt asking the student to write a semi-formal email (~100 words) \
+            to a colleague, addressing exactly 3 specific bullet points you provide. \
+            Teil 2: Write a task prompt asking the student to write a Forumsbeitrag (~150 words) \
+            arguing their position on a concrete social topic (e.g. social media use, remote work, \
+            learning languages). Provide the forum context and a question to respond to.
+            Generate 2 questions (one per Teil), both with null correctAnswer. maxPoints: 60.
+            Assessment uses 3 criteria: Aufgabenerfüllung (did they address all points?), \
+            kommunikative Gestaltung (coherence, register, flow), formale Richtigkeit (grammar, spelling).
+            """
+        case (.speaking, "B1"):
+            return """
+            GOETHE B1 SPRECHEN FORMAT (3 Teile, ~15 min):
+            Generate Teil 2 (Thema präsentieren): provide a prompt card topic with 4–5 visual \
+            cue words/phrases (like a real Goethe impulse card) on a concrete topic \
+            (e.g. Vorteile und Nachteile von Social Media; Leben in der Stadt oder auf dem Land). \
+            Instruct the student to give a 2-minute presentation with structure: \
+            Einleitung → Hauptteil (Vor- und Nachteile/Argumente) → Beispiel → Fazit.
+            Then generate 1 follow-up question the examiner would ask. maxPoints: 25. \
+            Set correctAnswer to null for all questions.
+            """
+        case (.reading, "A2"):
+            return """
+            GOETHE A2 LESEN FORMAT: provide a short text (150–200 words) on an everyday topic, \
+            followed by 5 multiple-choice questions with 3 options each. maxPoints: 10.
+            """
+        case (.listening, "A2"):
+            return """
+            GOETHE A2 HÖREN FORMAT: write a 150-word dialogue transcript (everyday situation), \
+            then 5 richtig/falsch questions. options: ["richtig","falsch"]. maxPoints: 10.
+            """
+        case (.writing, "A2"):
+            return """
+            GOETHE A2 SCHREIBEN FORMAT: provide a prompt to write a short semi-formal email \
+            (~80 words) responding to an invitation or inquiry, addressing 3 bullet points. maxPoints: 20.
+            """
+        case (.speaking, "A2"):
+            return """
+            GOETHE A2 SPRECHEN FORMAT: provide a planning task — student suggests and responds \
+            about a joint activity (e.g. planning a birthday party). Give a scenario and \
+            3 sub-prompts. maxPoints: 10.
+            """
+        default:
+            return "Generate an authentic \(level) \(skill.germanName) task at appropriate difficulty."
         }
     }
 }

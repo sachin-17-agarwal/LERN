@@ -276,6 +276,255 @@ enum TopicVocabulary {
             VocabSeed(german: "stattdessen", article: nil, plural: nil, english: "instead", example: "Können wir stattdessen am Sonntag gehen?", topic: "exam_speaking")
         ],
 
+
+        // Week 29 — Sequential past narrative, journalism (Plusquamperfekt week)
+        29: [
+            VocabSeed(german: "bereits", article: nil, plural: nil, english: "already", example: "Das Meeting hatte bereits begonnen, als ich ankam.", topic: "time"),
+            VocabSeed(german: "zuvor", article: nil, plural: nil, english: "previously / before that", example: "Er hatte zuvor drei Jahre in Berlin gearbeitet.", topic: "time"),
+            VocabSeed(german: "inzwischen", article: nil, plural: nil, english: "meanwhile / by now", example: "Inzwischen hatte die Situation sich verändert.", topic: "time"),
+            VocabSeed(german: "damals", article: nil, plural: nil, english: "back then", example: "Damals hatte die Firma nur zehn Mitarbeiter.", topic: "time"),
+            VocabSeed(german: "anschließend", article: nil, plural: nil, english: "afterwards", example: "Anschließend wurde das Ergebnis präsentiert.", topic: "sequence"),
+            VocabSeed(german: "daraufhin", article: nil, plural: nil, english: "as a result / thereupon", example: "Daraufhin entschloss er sich, die Stelle zu wechseln.", topic: "sequence"),
+            VocabSeed(german: "schließlich", article: nil, plural: nil, english: "finally / eventually", example: "Schließlich hatte sie ihr Ziel erreicht.", topic: "sequence"),
+            VocabSeed(german: "zunächst", article: nil, plural: nil, english: "initially / first of all", example: "Zunächst hatte niemand die Neuigkeit geglaubt.", topic: "sequence"),
+            VocabSeed(german: "die Meldung", article: "die", plural: "die Meldungen", english: "news report / announcement", example: "Die Meldung hatte alle überrascht.", topic: "journalism"),
+            VocabSeed(german: "die Schlagzeile", article: "die", plural: "die Schlagzeilen", english: "headline", example: "Die Schlagzeile war sehr provokativ.", topic: "journalism"),
+            VocabSeed(german: "berichten", article: nil, plural: nil, english: "to report", example: "Die Zeitung hatte über den Vorfall berichtet.", topic: "journalism"),
+            VocabSeed(german: "veröffentlichen", article: nil, plural: nil, english: "to publish", example: "Der Artikel war bereits veröffentlicht worden.", topic: "journalism"),
+            VocabSeed(german: "der Vorfall", article: "der", plural: "die Vorfälle", english: "incident", example: "Über den Vorfall wurde ausführlich berichtet.", topic: "journalism"),
+            VocabSeed(german: "das Ereignis", article: "das", plural: "die Ereignisse", english: "event", example: "Das Ereignis hatte große Aufmerksamkeit erregt.", topic: "journalism"),
+            VocabSeed(german: "der Zeuge", article: "der", plural: "die Zeugen", english: "witness", example: "Ein Zeuge hatte den Hergang beschrieben.", topic: "journalism"),
+            VocabSeed(german: "aufdecken", article: nil, plural: nil, english: "to uncover / reveal", example: "Investigative Journalisten hatten den Betrug aufgedeckt.", topic: "journalism"),
+            VocabSeed(german: "ankündigen", article: nil, plural: nil, english: "to announce", example: "Die Direktorin hatte die Änderungen angekündigt.", topic: "journalism"),
+            VocabSeed(german: "bestätigen", article: nil, plural: nil, english: "to confirm", example: "Die Behörde hatte den Bericht bestätigt.", topic: "journalism"),
+            VocabSeed(german: "widerlegen", article: nil, plural: nil, english: "to refute", example: "Die Studie hatte die frühere Annahme widerlegt.", topic: "journalism"),
+            VocabSeed(german: "die Quelle", article: "die", plural: "die Quellen", english: "source", example: "Laut zuverlässiger Quellen hatte er bereits gewusst.", topic: "journalism")
+        ],
+
+        // Week 30 — Administration, institutions (Passiv Präteritum/Perfekt week)
+        30: [
+            VocabSeed(german: "der Antrag", article: "der", plural: "die Anträge", english: "application / request (formal)", example: "Der Antrag wurde innerhalb von zwei Wochen bearbeitet.", topic: "administration"),
+            VocabSeed(german: "die Genehmigung", article: "die", plural: "die Genehmigungen", english: "approval / permit", example: "Die Genehmigung wurde erteilt.", topic: "administration"),
+            VocabSeed(german: "das Amt", article: "das", plural: "die Ämter", english: "authority / office (official)", example: "Der Antrag muss beim zuständigen Amt eingereicht werden.", topic: "administration"),
+            VocabSeed(german: "die Behörde", article: "die", plural: "die Behörden", english: "authority / government agency", example: "Die Unterlagen wurden von der Behörde geprüft.", topic: "administration"),
+            VocabSeed(german: "bearbeiten", article: nil, plural: nil, english: "to process / handle", example: "Der Fall wurde sofort bearbeitet.", topic: "administration"),
+            VocabSeed(german: "einreichen", article: nil, plural: nil, english: "to submit", example: "Die Bewerbung wurde fristgerecht eingereicht.", topic: "administration"),
+            VocabSeed(german: "genehmigen", article: nil, plural: nil, english: "to approve", example: "Das Projekt wurde vom Ministerium genehmigt.", topic: "administration"),
+            VocabSeed(german: "ablehnen", article: nil, plural: nil, english: "to reject / decline", example: "Der erste Antrag wurde leider abgelehnt.", topic: "administration"),
+            VocabSeed(german: "die Frist", article: "die", plural: "die Fristen", english: "deadline", example: "Die Frist wurde um zwei Wochen verlängert.", topic: "administration"),
+            VocabSeed(german: "die Unterlagen", article: "die", plural: nil, english: "documents / paperwork", example: "Alle Unterlagen müssen vollständig sein.", topic: "administration"),
+            VocabSeed(german: "das Formular", article: "das", plural: "die Formulare", english: "form", example: "Das Formular wurde digital ausgefüllt.", topic: "administration"),
+            VocabSeed(german: "ausfüllen", article: nil, plural: nil, english: "to fill in / complete", example: "Das Antragsformular muss vollständig ausgefüllt werden.", topic: "administration"),
+            VocabSeed(german: "erteilen", article: nil, plural: nil, english: "to grant / issue", example: "Eine Ausnahmegenehmigung wurde erteilt.", topic: "administration"),
+            VocabSeed(german: "die Vorschrift", article: "die", plural: "die Vorschriften", english: "regulation / rule", example: "Die Vorschriften müssen eingehalten werden.", topic: "administration"),
+            VocabSeed(german: "zuständig", article: nil, plural: nil, english: "responsible / competent (official)", example: "Das Ministerium ist für diesen Bereich zuständig.", topic: "administration"),
+            VocabSeed(german: "die Anerkennung", article: "die", plural: "die Anerkennungen", english: "recognition / accreditation", example: "Der Abschluss wurde in Deutschland anerkannt.", topic: "administration"),
+            VocabSeed(german: "die Korrespondenz", article: "die", plural: nil, english: "correspondence", example: "Die gesamte Korrespondenz wurde archiviert.", topic: "administration"),
+            VocabSeed(german: "abschließen", article: nil, plural: nil, english: "to conclude / complete", example: "Das Verfahren wurde erfolgreich abgeschlossen.", topic: "administration"),
+            VocabSeed(german: "verlängern", article: nil, plural: nil, english: "to extend", example: "Der Vertrag wurde um ein Jahr verlängert.", topic: "administration"),
+            VocabSeed(german: "das Protokoll", article: "das", plural: "die Protokolle", english: "minutes / record / protocol", example: "Das Protokoll der Sitzung wurde veröffentlicht.", topic: "administration")
+        ],
+
+        // Week 31 — Media, news, reporting (Konjunktiv I week)
+        31: [
+            VocabSeed(german: "laut", article: nil, plural: nil, english: "according to (+ genitive/dative)", example: "Laut dem Bericht sei die Lage stabil.", topic: "reporting"),
+            VocabSeed(german: "mitteilen", article: nil, plural: nil, english: "to inform / communicate", example: "Die Behörde teilte mit, das Verfahren sei abgeschlossen.", topic: "reporting"),
+            VocabSeed(german: "behaupten", article: nil, plural: nil, english: "to claim / assert", example: "Der Sprecher behauptete, alle Daten seien korrekt.", topic: "reporting"),
+            VocabSeed(german: "erklären", article: nil, plural: nil, english: "to explain / declare", example: "Die Ministerin erklärte, sie werde zurücktreten.", topic: "reporting"),
+            VocabSeed(german: "ankündigen", article: nil, plural: nil, english: "to announce", example: "Das Unternehmen kündigte an, es werde expandieren.", topic: "reporting"),
+            VocabSeed(german: "bestätigen", article: nil, plural: nil, english: "to confirm", example: "Der Sprecher bestätigte, die Gerüchte seien wahr.", topic: "reporting"),
+            VocabSeed(german: "dementieren", article: nil, plural: nil, english: "to deny (officially)", example: "Die Partei dementierte, es habe Unregelmäßigkeiten gegeben.", topic: "reporting"),
+            VocabSeed(german: "das Medien", article: "die", plural: nil, english: "the media (plural)", example: "Die Medien berichteten, die Verhandlungen seien gescheitert.", topic: "media"),
+            VocabSeed(german: "die Pressemitteilung", article: "die", plural: "die Pressemitteilungen", english: "press release", example: "In der Pressemitteilung hieß es, das Projekt sei erfolgreich.", topic: "media"),
+            VocabSeed(german: "die Stellungnahme", article: "die", plural: "die Stellungnahmen", english: "statement / position paper", example: "In der Stellungnahme hieß es, die Maßnahmen seien notwendig.", topic: "reporting"),
+            VocabSeed(german: "heißen", article: nil, plural: nil, english: "to say (in a text): es heißt…", example: "In dem Bericht hieß es, die Situation verbessere sich.", topic: "reporting"),
+            VocabSeed(german: "zufolge", article: nil, plural: nil, english: "according to (postposition)", example: "Dem Bericht zufolge sei die Methode erfolgreich.", topic: "reporting"),
+            VocabSeed(german: "die Aussage", article: "die", plural: "die Aussagen", english: "statement", example: "Die Aussage des Zeugen sei nicht glaubwürdig gewesen.", topic: "reporting"),
+            VocabSeed(german: "die Nachrichtenagentur", article: "die", plural: "die Nachrichtenagenturen", english: "news agency", example: "Laut Nachrichtenagentur habe es einen Unfall gegeben.", topic: "media"),
+            VocabSeed(german: "der Kommentar", article: "der", plural: "die Kommentare", english: "commentary / comment", example: "Der Kommentar stellte fest, die Entscheidung sei falsch.", topic: "media"),
+            VocabSeed(german: "wiedergeben", article: nil, plural: nil, english: "to report / reproduce (words)", example: "Der Journalist gab die Aussagen des Ministers wieder.", topic: "reporting"),
+            VocabSeed(german: "zitieren", article: nil, plural: nil, english: "to quote", example: "Die Zeitung zitierte den Experten, er halte die Lage für kritisch.", topic: "reporting"),
+            VocabSeed(german: "die Berichterstattung", article: "die", plural: nil, english: "reporting / coverage", example: "Die Berichterstattung sei einseitig gewesen.", topic: "media"),
+            VocabSeed(german: "der Sprecher", article: "der", plural: "die Sprecher", english: "spokesperson (m)", example: "Der Sprecher erklärte, alle Maßnahmen seien rechtmäßig.", topic: "reporting"),
+            VocabSeed(german: "die Sprecherin", article: "die", plural: "die Sprecherinnen", english: "spokesperson (f)", example: "Die Sprecherin teilte mit, das Treffen sei verschoben worden.", topic: "reporting")
+        ],
+
+        // Week 32 — Society, environment, politics (Genitive week)
+        32: [
+            VocabSeed(german: "die Gesellschaft", article: "die", plural: "die Gesellschaften", english: "society", example: "Trotz der gesellschaftlichen Veränderungen bleibt vieles gleich.", topic: "society"),
+            VocabSeed(german: "die Umwelt", article: "die", plural: nil, english: "environment", example: "Wegen des Klimawandels leidet die Umwelt.", topic: "environment"),
+            VocabSeed(german: "der Klimawandel", article: "der", plural: nil, english: "climate change", example: "Aufgrund des Klimawandels sind Maßnahmen notwendig.", topic: "environment"),
+            VocabSeed(german: "die Nachhaltigkeit", article: "die", plural: nil, english: "sustainability", example: "Innerhalb des Unternehmens wird Nachhaltigkeit großgeschrieben.", topic: "environment"),
+            VocabSeed(german: "die Ressource", article: "die", plural: "die Ressourcen", english: "resource", example: "Die Nutzung der natürlichen Ressourcen muss reduziert werden.", topic: "environment"),
+            VocabSeed(german: "die Armut", article: "die", plural: nil, english: "poverty", example: "Trotz wirtschaftlichen Wachstums bleibt Armut ein Problem.", topic: "society"),
+            VocabSeed(german: "die Ungleichheit", article: "die", plural: nil, english: "inequality", example: "Wegen der sozialen Ungleichheit gibt es viele Proteste.", topic: "society"),
+            VocabSeed(german: "der Staat", article: "der", plural: "die Staaten", english: "state / country", example: "Die Aufgabe des Staates ist der Schutz seiner Bürger.", topic: "politics"),
+            VocabSeed(german: "die Demokratie", article: "die", plural: "die Demokratien", english: "democracy", example: "Die Stärke einer Demokratie liegt in ihrer Vielfalt.", topic: "politics"),
+            VocabSeed(german: "die Maßnahme", article: "die", plural: "die Maßnahmen", english: "measure / action", example: "Trotz der Maßnahmen der Regierung stieg die Arbeitslosigkeit.", topic: "politics"),
+            VocabSeed(german: "der Einfluss", article: "der", plural: "die Einflüsse", english: "influence", example: "Der Einfluss des Internets auf die Gesellschaft ist enorm.", topic: "society"),
+            VocabSeed(german: "die Integration", article: "die", plural: nil, english: "integration", example: "Statt der Ablehnung brauchen wir mehr Integration.", topic: "society"),
+            VocabSeed(german: "nachhaltig", article: nil, plural: nil, english: "sustainable / lasting", example: "Wir brauchen nachhaltige Lösungen.", topic: "environment"),
+            VocabSeed(german: "sozial", article: nil, plural: nil, english: "social", example: "Innerhalb sozialer Netzwerke verbreiten sich Informationen schnell.", topic: "society"),
+            VocabSeed(german: "politisch", article: nil, plural: nil, english: "political", example: "Aufgrund politischer Entscheidungen wurden Gelder gestrichen.", topic: "politics"),
+            VocabSeed(german: "wirtschaftlich", article: nil, plural: nil, english: "economic(al)", example: "Wegen wirtschaftlicher Probleme wird gespart.", topic: "politics"),
+            VocabSeed(german: "der Bürger", article: "der", plural: "die Bürger", english: "citizen", example: "Die Rechte der Bürger müssen geschützt werden.", topic: "politics"),
+            VocabSeed(german: "fördern", article: nil, plural: nil, english: "to promote / support / fund", example: "Statt der Kritik sollte man Lösungen fördern.", topic: "society"),
+            VocabSeed(german: "der Fortschritt", article: "der", plural: nil, english: "progress", example: "Trotz des schnellen Fortschritts gibt es neue Risiken.", topic: "society"),
+            VocabSeed(german: "verursachen", article: nil, plural: nil, english: "to cause", example: "Wegen des Sturms wurden viele Schäden verursacht.", topic: "environment")
+        ],
+
+        // Week 33 — Abstract relationships, prepositional objects (da-/wo-compounds week)
+        33: [
+            VocabSeed(german: "sich handeln um", article: nil, plural: nil, english: "to be about / concern", example: "Worum handelt es sich bei dieser Stelle?", topic: "abstract"),
+            VocabSeed(german: "bestehen aus", article: nil, plural: nil, english: "to consist of", example: "Das Gremium besteht aus fünf Experten.", topic: "abstract"),
+            VocabSeed(german: "abhängen von", article: nil, plural: nil, english: "to depend on", example: "Das Ergebnis hängt von vielen Faktoren ab.", topic: "abstract"),
+            VocabSeed(german: "warten auf", article: nil, plural: nil, english: "to wait for", example: "Wir warten noch darauf, eine Antwort zu erhalten.", topic: "abstract"),
+            VocabSeed(german: "achten auf", article: nil, plural: nil, english: "to pay attention to", example: "Worauf muss ich bei der Bewerbung besonders achten?", topic: "abstract"),
+            VocabSeed(german: "sich entscheiden für", article: nil, plural: nil, english: "to decide for / choose", example: "Wofür haben Sie sich entschieden?", topic: "abstract"),
+            VocabSeed(german: "beitragen zu", article: nil, plural: nil, english: "to contribute to", example: "Dazu kann jeder einen Beitrag leisten.", topic: "abstract"),
+            VocabSeed(german: "sich gewöhnen an", article: nil, plural: nil, english: "to get used to", example: "Ich habe mich daran gewöhnt, früh aufzustehen.", topic: "abstract"),
+            VocabSeed(german: "führen zu", article: nil, plural: nil, english: "to lead to", example: "Das führt dazu, dass Kosten steigen.", topic: "abstract"),
+            VocabSeed(german: "hinweisen auf", article: nil, plural: nil, english: "to point out / refer to", example: "Ich möchte darauf hinweisen, dass die Frist abläuft.", topic: "abstract"),
+            VocabSeed(german: "verfügen über", article: nil, plural: nil, english: "to have at one's disposal", example: "Worüber verfügt die Universität an Ressourcen?", topic: "abstract"),
+            VocabSeed(german: "sich beziehen auf", article: nil, plural: nil, english: "to refer to", example: "Worauf bezieht sich dieser Abschnitt?", topic: "abstract"),
+            VocabSeed(german: "reagieren auf", article: nil, plural: nil, english: "to react to", example: "Darauf hat die Regierung noch nicht reagiert.", topic: "abstract"),
+            VocabSeed(german: "verzichten auf", article: nil, plural: nil, english: "to do without / forgo", example: "Darauf möchte ich nicht verzichten.", topic: "abstract"),
+            VocabSeed(german: "die Überzeugung", article: "die", plural: "die Überzeugungen", english: "conviction / belief", example: "Ich bin davon überzeugt, dass es funktioniert.", topic: "abstract"),
+            VocabSeed(german: "die Erwartung", article: "die", plural: "die Erwartungen", english: "expectation", example: "Ich freue mich darauf, mehr darüber zu erfahren.", topic: "abstract"),
+            VocabSeed(german: "der Zusammenhang", article: "der", plural: "die Zusammenhänge", english: "connection / context", example: "In welchem Zusammenhang steht das damit?", topic: "abstract"),
+            VocabSeed(german: "die Konsequenz", article: "die", plural: "die Konsequenzen", english: "consequence", example: "Wir müssen damit rechnen, dass es Konsequenzen gibt.", topic: "abstract"),
+            VocabSeed(german: "profitieren von", article: nil, plural: nil, english: "to benefit from", example: "Davon profitieren alle Beteiligten.", topic: "abstract"),
+            VocabSeed(german: "übereinstimmen mit", article: nil, plural: nil, english: "to agree with / match", example: "Damit stimme ich vollkommen überein.", topic: "abstract")
+        ],
+
+        // Week 34 — Problem-solving, services, delegation (indirect questions + lassen)
+        34: [
+            VocabSeed(german: "klären", article: nil, plural: nil, english: "to clarify", example: "Könnten Sie klären, ob noch Plätze frei sind?", topic: "services"),
+            VocabSeed(german: "herausfinden", article: nil, plural: nil, english: "to find out", example: "Ich würde gern herausfinden, wann die Veranstaltung stattfindet.", topic: "services"),
+            VocabSeed(german: "sich erkundigen", article: nil, plural: nil, english: "to inquire", example: "Ich möchte mich erkundigen, ob Sie noch Kapazität haben.", topic: "services"),
+            VocabSeed(german: "beauftragen", article: nil, plural: nil, english: "to commission / instruct", example: "Wir haben eine Agentur damit beauftragt.", topic: "delegation"),
+            VocabSeed(german: "delegieren", article: nil, plural: nil, english: "to delegate", example: "Diese Aufgabe kann man ruhig delegieren.", topic: "delegation"),
+            VocabSeed(german: "veranlassen", article: nil, plural: nil, english: "to arrange / cause to happen", example: "Ich werde veranlassen, dass der Raum reserviert wird.", topic: "delegation"),
+            VocabSeed(german: "ermöglichen", article: nil, plural: nil, english: "to enable / make possible", example: "Das Stipendium ermöglicht mir, im Ausland zu studieren.", topic: "services"),
+            VocabSeed(german: "die Lösung", article: "die", plural: "die Lösungen", english: "solution", example: "Ich frage mich, ob es eine einfachere Lösung gibt.", topic: "problem-solving"),
+            VocabSeed(german: "das Problem", article: "das", plural: "die Probleme", english: "problem", example: "Das Problem lässt sich schnell lösen.", topic: "problem-solving"),
+            VocabSeed(german: "das Hindernis", article: "das", plural: "die Hindernisse", english: "obstacle", example: "Ich weiß nicht, wie groß die Hindernisse sind.", topic: "problem-solving"),
+            VocabSeed(german: "reparieren lassen", article: nil, plural: nil, english: "to have (sth) repaired", example: "Ich habe mein Fahrrad reparieren lassen.", topic: "lassen"),
+            VocabSeed(german: "sich beraten lassen", article: nil, plural: nil, english: "to get advice / be advised", example: "Ich habe mich von einem Experten beraten lassen.", topic: "lassen"),
+            VocabSeed(german: "anfertigen lassen", article: nil, plural: nil, english: "to have (sth) made", example: "Wir haben ein Logo anfertigen lassen.", topic: "lassen"),
+            VocabSeed(german: "die Dienstleistung", article: "die", plural: "die Dienstleistungen", english: "service", example: "Welche Dienstleistungen bieten Sie an?", topic: "services"),
+            VocabSeed(german: "die Verfügbarkeit", article: "die", plural: nil, english: "availability", example: "Ich würde gern wissen, ob noch Plätze verfügbar sind.", topic: "services"),
+            VocabSeed(german: "unternehmen", article: nil, plural: nil, english: "to undertake / do something", example: "Was lässt sich dagegen unternehmen?", topic: "problem-solving"),
+            VocabSeed(german: "die Anforderung", article: "die", plural: "die Anforderungen", english: "requirement", example: "Ich frage mich, ob ich alle Anforderungen erfülle.", topic: "services"),
+            VocabSeed(german: "übernehmen", article: nil, plural: nil, english: "to take over / handle", example: "Könnten Sie diese Aufgabe übernehmen?", topic: "delegation"),
+            VocabSeed(german: "regeln", article: nil, plural: nil, english: "to arrange / settle", example: "Das lässt sich problemlos regeln.", topic: "delegation"),
+            VocabSeed(german: "die Auskunft", article: "die", plural: "die Auskünfte", english: "information / inquiry answer", example: "Bitte geben Sie mir Auskunft darüber, wann das möglich ist.", topic: "services")
+        ],
+
+        // Week 35 — Complex descriptions, academic topics (extended relative clauses)
+        35: [
+            VocabSeed(german: "aktuell", article: nil, plural: nil, english: "current / topical", example: "Das ist ein aktuelles Thema, das alle betrifft.", topic: "academic"),
+            VocabSeed(german: "entsprechend", article: nil, plural: nil, english: "corresponding / accordingly", example: "Das Verfahren, dem wir folgen, ist entsprechend angepasst.", topic: "academic"),
+            VocabSeed(german: "umfangreich", article: nil, plural: nil, english: "extensive / comprehensive", example: "Das ist eine umfangreiche Studie, deren Ergebnisse beeindrucken.", topic: "academic"),
+            VocabSeed(german: "bedeutend", article: nil, plural: nil, english: "significant / important", example: "Das ist ein bedeutender Forscher, dessen Arbeit weltweit bekannt ist.", topic: "academic"),
+            VocabSeed(german: "vielfältig", article: nil, plural: nil, english: "diverse / varied", example: "Die Möglichkeiten, die sich bieten, sind vielfältig.", topic: "academic"),
+            VocabSeed(german: "die Grundlage", article: "die", plural: "die Grundlagen", english: "basis / foundation", example: "Das ist die Grundlage, auf der unsere Arbeit beruht.", topic: "academic"),
+            VocabSeed(german: "das Konzept", article: "das", plural: "die Konzepte", english: "concept", example: "Das ist ein Konzept, das ich sehr überzeugend finde.", topic: "academic"),
+            VocabSeed(german: "der Aspekt", article: "der", plural: "die Aspekte", english: "aspect", example: "Das ist ein Aspekt, dem wir besondere Aufmerksamkeit widmen.", topic: "academic"),
+            VocabSeed(german: "der Schwerpunkt", article: "der", plural: "die Schwerpunkte", english: "focus / main emphasis", example: "Der Schwerpunkt, auf den wir uns konzentrieren, ist Forschung.", topic: "academic"),
+            VocabSeed(german: "nachweisen", article: nil, plural: nil, english: "to prove / demonstrate", example: "Das ist ein Effekt, der sich wissenschaftlich nachweisen lässt.", topic: "academic"),
+            VocabSeed(german: "das Kriterium", article: "das", plural: "die Kriterien", english: "criterion", example: "Das sind Kriterien, denen die Bewerbung entsprechen muss.", topic: "academic"),
+            VocabSeed(german: "die Fachkompetenz", article: "die", plural: nil, english: "professional expertise", example: "Das ist eine Fachkompetenz, die sehr gefragt ist.", topic: "academic"),
+            VocabSeed(german: "der Beitrag", article: "der", plural: "die Beiträge", english: "contribution", example: "Das ist ein Beitrag, dessen Einfluss nicht zu unterschätzen ist.", topic: "academic"),
+            VocabSeed(german: "der Rahmen", article: "der", plural: "die Rahmen", english: "framework / context", example: "Das ist ein Rahmen, innerhalb dessen wir arbeiten.", topic: "academic"),
+            VocabSeed(german: "verweisen auf", article: nil, plural: nil, english: "to refer to / point to", example: "Das ist ein Punkt, auf den ich immer wieder verweisen muss.", topic: "academic"),
+            VocabSeed(german: "die Herausforderung", article: "die", plural: "die Herausforderungen", english: "challenge", example: "Das ist eine Herausforderung, der wir uns stellen müssen.", topic: "academic"),
+            VocabSeed(german: "beeinflussen", article: nil, plural: nil, english: "to influence", example: "Das sind Faktoren, durch die das Ergebnis beeinflusst wird.", topic: "academic"),
+            VocabSeed(german: "sich auseinandersetzen mit", article: nil, plural: nil, english: "to deal with / engage with", example: "Das ist ein Thema, mit dem wir uns gründlich auseinandersetzen.", topic: "academic"),
+            VocabSeed(german: "zugrunde liegen", article: nil, plural: nil, english: "to underlie / be the basis of", example: "Das ist die Annahme, der unsere Studie zugrunde liegt.", topic: "academic"),
+            VocabSeed(german: "anwenden", article: nil, plural: nil, english: "to apply", example: "Das ist eine Methode, die in vielen Bereichen angewendet wird.", topic: "academic")
+        ],
+
+        // Week 36 — Academic/formal argumentation (advanced connectors + text cohesion)
+        36: [
+            VocabSeed(german: "jedoch", article: nil, plural: nil, english: "however (adverb/connector)", example: "Das Ergebnis ist positiv. Jedoch gibt es noch offene Fragen.", topic: "connectors"),
+            VocabSeed(german: "allerdings", article: nil, plural: nil, english: "however / admittedly", example: "Die Methode ist effektiv. Allerdings ist sie zeitaufwendig.", topic: "connectors"),
+            VocabSeed(german: "trotzdem", article: nil, plural: nil, english: "nevertheless / even so", example: "Die Aufgabe war schwierig. Trotzdem haben wir sie geschafft.", topic: "connectors"),
+            VocabSeed(german: "dennoch", article: nil, plural: nil, english: "nevertheless / yet", example: "Die Kritik war scharf. Dennoch hält sie an ihrem Plan fest.", topic: "connectors"),
+            VocabSeed(german: "sodass", article: nil, plural: nil, english: "so that (result)", example: "Die Ergebnisse waren überzeugend, sodass das Projekt genehmigt wurde.", topic: "connectors"),
+            VocabSeed(german: "daher", article: nil, plural: nil, english: "therefore / hence", example: "Die Nachfrage ist gestiegen. Daher werden mehr Stellen geschaffen.", topic: "connectors"),
+            VocabSeed(german: "infolgedessen", article: nil, plural: nil, english: "consequently / as a result", example: "Die Kosten stiegen. Infolgedessen musste das Budget angepasst werden.", topic: "connectors"),
+            VocabSeed(german: "zudem", article: nil, plural: nil, english: "moreover / in addition", example: "Die Stelle ist gut bezahlt. Zudem bietet sie flexible Arbeitszeiten.", topic: "connectors"),
+            VocabSeed(german: "darüber hinaus", article: nil, plural: nil, english: "beyond that / furthermore", example: "Die Universität ist renommiert. Darüber hinaus liegt sie zentral.", topic: "connectors"),
+            VocabSeed(german: "sobald", article: nil, plural: nil, english: "as soon as (conj.)", example: "Sobald die Unterlagen vollständig sind, beginnt die Prüfung.", topic: "connectors"),
+            VocabSeed(german: "solange", article: nil, plural: nil, english: "as long as (conj.)", example: "Solange Sie die Bedingungen erfüllen, bleibt das Angebot gültig.", topic: "connectors"),
+            VocabSeed(german: "seitdem", article: nil, plural: nil, english: "since (time)", example: "Seitdem sie die Stelle angetreten hat, ist vieles besser geworden.", topic: "connectors"),
+            VocabSeed(german: "obgleich", article: nil, plural: nil, english: "although (formal variant)", example: "Obgleich das Ergebnis überraschend war, wurde es akzeptiert.", topic: "connectors"),
+            VocabSeed(german: "auch wenn", article: nil, plural: nil, english: "even if / even though", example: "Auch wenn es schwierig wird, werde ich nicht aufgeben.", topic: "connectors"),
+            VocabSeed(german: "einerseits…andererseits", article: nil, plural: nil, english: "on the one hand…on the other hand", example: "Einerseits spart man Zeit, andererseits verliert man Qualität.", topic: "connectors"),
+            VocabSeed(german: "im Vergleich zu", article: nil, plural: nil, english: "in comparison to", example: "Im Vergleich zum Vorjahr sind die Ergebnisse deutlich besser.", topic: "academic"),
+            VocabSeed(german: "in Bezug auf", article: nil, plural: nil, english: "with regard to", example: "In Bezug auf die Kosten gibt es noch Verbesserungspotenzial.", topic: "academic"),
+            VocabSeed(german: "angesichts", article: nil, plural: nil, english: "in view of / given (+ genitive)", example: "Angesichts der Ergebnisse müssen wir die Strategie überdenken.", topic: "connectors"),
+            VocabSeed(german: "abgesehen von", article: nil, plural: nil, english: "apart from / aside from", example: "Abgesehen von kleineren Fehlern war der Text sehr gut.", topic: "connectors"),
+            VocabSeed(german: "im Großen und Ganzen", article: nil, plural: nil, english: "on the whole / overall", example: "Im Großen und Ganzen war das Projekt ein Erfolg.", topic: "academic")
+        ],
+
+        // Week 37 — B1 reading exam vocabulary
+        37: [
+            VocabSeed(german: "entnehmen", article: nil, plural: nil, english: "to extract (information from a text)", example: "Welche Information können Sie dem Text entnehmen?", topic: "b1_reading"),
+            VocabSeed(german: "sinngemäß", article: nil, plural: nil, english: "in terms of meaning / according to sense", example: "Welche Aussage entspricht sinngemäß dem Text?", topic: "b1_reading"),
+            VocabSeed(german: "zuordnen", article: nil, plural: nil, english: "to match / assign", example: "Ordnen Sie die Überschriften den Absätzen zu.", topic: "b1_reading"),
+            VocabSeed(german: "erschließen", article: nil, plural: nil, english: "to infer / work out (from context)", example: "Aus dem Kontext lässt sich die Bedeutung erschließen.", topic: "b1_reading"),
+            VocabSeed(german: "der Absatz", article: "der", plural: "die Absätze", english: "paragraph", example: "Im dritten Absatz wird das Thema vertieft.", topic: "b1_reading"),
+            VocabSeed(german: "sinnvoll", article: nil, plural: nil, english: "sensible / meaningful", example: "Welche Antwort ist am sinnvollsten?", topic: "b1_reading"),
+            VocabSeed(german: "das Fazit", article: "das", plural: "die Fazite", english: "conclusion / summary", example: "Das Fazit des Textes lautet…", topic: "b1_reading"),
+            VocabSeed(german: "implizieren", article: nil, plural: nil, english: "to imply", example: "Was impliziert der Autor mit dieser Aussage?", topic: "b1_reading"),
+            VocabSeed(german: "der Standpunkt", article: "der", plural: "die Standpunkte", english: "viewpoint / standpoint", example: "Welchen Standpunkt vertritt der Autor?", topic: "b1_reading"),
+            VocabSeed(german: "inhaltlich", article: nil, plural: nil, english: "in terms of content", example: "Inhaltlich stimmt die Aussage mit dem Text überein.", topic: "b1_reading")
+        ],
+
+        // Week 38 — B1 listening exam vocabulary
+        38: [
+            VocabSeed(german: "die Aufnahme", article: "die", plural: "die Aufnahmen", english: "recording", example: "Die Aufnahme wird zweimal abgespielt.", topic: "b1_listening"),
+            VocabSeed(german: "zweimal", article: nil, plural: nil, english: "twice", example: "Sie hören das Gespräch zweimal.", topic: "b1_listening"),
+            VocabSeed(german: "mitschreiben", article: nil, plural: nil, english: "to take notes while listening", example: "Schreiben Sie beim ersten Hören mit.", topic: "b1_listening"),
+            VocabSeed(german: "das Stichwort", article: "das", plural: "die Stichworte", english: "key word / note", example: "Notieren Sie Stichworte.", topic: "b1_listening"),
+            VocabSeed(german: "die Aussage", article: "die", plural: "die Aussagen", english: "statement", example: "Welche Aussage stimmt mit dem Gehörten überein?", topic: "b1_listening"),
+            VocabSeed(german: "sinngemäß richtig", article: nil, plural: nil, english: "correct in meaning", example: "Die Aussage ist sinngemäß richtig.", topic: "b1_listening"),
+            VocabSeed(german: "die Radiosendung", article: "die", plural: "die Radiosendungen", english: "radio programme", example: "Sie hören einen Ausschnitt aus einer Radiosendung.", topic: "b1_listening"),
+            VocabSeed(german: "der Ausschnitt", article: "der", plural: "die Ausschnitte", english: "excerpt / clip", example: "Hören Sie den folgenden Ausschnitt.", topic: "b1_listening"),
+            VocabSeed(german: "die Durchsage", article: "die", plural: "die Durchsagen", english: "public announcement", example: "Hören Sie fünf Durchsagen.", topic: "b1_listening"),
+            VocabSeed(german: "fokussiert zuhören", article: nil, plural: nil, english: "to listen with focus", example: "Hören Sie fokussiert — was ist das Hauptthema?", topic: "b1_listening")
+        ],
+
+        // Week 39 — B1 writing exam vocabulary (Mitteilung + Forumsbeitrag)
+        39: [
+            VocabSeed(german: "der Forumsbeitrag", article: "der", plural: "die Forumsbeiträge", english: "forum post / online comment", example: "Schreiben Sie einen Forumsbeitrag von ca. 150 Wörtern.", topic: "b1_writing"),
+            VocabSeed(german: "der Kommentar", article: "der", plural: "die Kommentare", english: "comment / opinion piece", example: "Schreiben Sie einen Kommentar zu diesem Thema.", topic: "b1_writing"),
+            VocabSeed(german: "die Mitteilung", article: "die", plural: "die Mitteilungen", english: "message / notification", example: "Schreiben Sie eine Mitteilung an Ihre Kollegin.", topic: "b1_writing"),
+            VocabSeed(german: "meiner Ansicht nach", article: nil, plural: nil, english: "in my opinion / view", example: "Meiner Ansicht nach ist das eine gute Lösung.", topic: "b1_writing"),
+            VocabSeed(german: "meines Erachtens", article: nil, plural: nil, english: "in my opinion (formal)", example: "Meines Erachtens sollte man mehr investieren.", topic: "b1_writing"),
+            VocabSeed(german: "aus meiner Sicht", article: nil, plural: nil, english: "from my perspective", example: "Aus meiner Sicht hat die Digitalisierung viele Vorteile.", topic: "b1_writing"),
+            VocabSeed(german: "dafür spricht", article: nil, plural: nil, english: "in favour of it speaks…", example: "Dafür spricht, dass es kostengünstiger ist.", topic: "b1_writing"),
+            VocabSeed(german: "dagegen spricht", article: nil, plural: nil, english: "against it speaks…", example: "Dagegen spricht jedoch das erhöhte Risiko.", topic: "b1_writing"),
+            VocabSeed(german: "abschließend", article: nil, plural: nil, english: "in conclusion / to conclude", example: "Abschließend möchte ich sagen, dass…", topic: "b1_writing"),
+            VocabSeed(german: "die Aufgabenerfüllung", article: "die", plural: nil, english: "task completion (Goethe rubric)", example: "Aufgabenerfüllung bedeutet: alle Punkte der Aufgabe abdecken.", topic: "b1_writing")
+        ],
+
+        // Week 40 — B1 speaking exam vocabulary (Sprechen format)
+        40: [
+            VocabSeed(german: "die Einleitung", article: "die", plural: "die Einleitungen", english: "introduction", example: "In der Einleitung stelle ich das Thema vor.", topic: "b1_speaking"),
+            VocabSeed(german: "der Hauptteil", article: "der", plural: nil, english: "main body", example: "Im Hauptteil nenne ich Vor- und Nachteile.", topic: "b1_speaking"),
+            VocabSeed(german: "das Fazit", article: "das", plural: "die Fazite", english: "conclusion", example: "Im Fazit fasse ich meine Position zusammen.", topic: "b1_speaking"),
+            VocabSeed(german: "zum Beispiel", article: nil, plural: nil, english: "for example", example: "Zum Beispiel könnte man das Problem so lösen.", topic: "b1_speaking"),
+            VocabSeed(german: "auf der einen Seite", article: nil, plural: nil, english: "on the one hand", example: "Auf der einen Seite hat das Internet viele Vorteile.", topic: "b1_speaking"),
+            VocabSeed(german: "Was hältst du davon?", article: nil, plural: nil, english: "What do you think about that?", example: "Was hältst du davon, ins Kino zu gehen?", topic: "b1_speaking"),
+            VocabSeed(german: "Ich finde das gut, weil…", article: nil, plural: nil, english: "I think that's good, because…", example: "Ich finde das gut, weil es praktisch ist.", topic: "b1_speaking"),
+            VocabSeed(german: "Wie wäre es mit…?", article: nil, plural: nil, english: "How about…?", example: "Wie wäre es mit einem Picknick im Park?", topic: "b1_speaking"),
+            VocabSeed(german: "Das klingt gut, aber…", article: nil, plural: nil, english: "That sounds good, but…", example: "Das klingt gut, aber ich habe am Samstag keine Zeit.", topic: "b1_speaking"),
+            VocabSeed(german: "zusammenfassen", article: nil, plural: nil, english: "to summarise", example: "Ich fasse meine wichtigsten Punkte kurz zusammen.", topic: "b1_speaking")
+        ]
+
         // Week 27 — Polite requests, hypotheticals (Konjunktiv II week)
         27: [
             VocabSeed(german: "die Bitte", article: "die", plural: "die Bitten", english: "request", example: "Ich hätte eine Bitte.", topic: "polite_requests"),

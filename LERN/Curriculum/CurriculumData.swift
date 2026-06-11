@@ -261,7 +261,138 @@ enum CurriculumData {
             vocabularyDomain: "Professional and academic processes",
             targetNewWords: 16, skillFocus: .writing,
             productionPrompt: "Describe a professional or academic process using the passive voice.",
-            examAlignment: "B1 — describing processes"
+            examAlignment: "B1 Schreiben — describing processes"
+        ),
+        CurriculumWeek(
+            weekNumber: 29, level: .b1,
+            grammarTopic: "Plusquamperfekt and nachdem/bevor",
+            grammarSubtopics: ["hatte/war + past participle", "Sequencing past events", "nachdem + Plusquamperfekt", "bevor + Präteritum/Perfekt"],
+            vocabularyDomain: "Sequential past narrative, journalism",
+            targetNewWords: 20, skillFocus: .writing,
+            productionPrompt: "Narrate a sequence of past events using Plusquamperfekt and nachdem/bevor clauses.",
+            examAlignment: "B1 Schreiben — formal past narrative"
+        ),
+        CurriculumWeek(
+            weekNumber: 30, level: .b1,
+            grammarTopic: "Passiv Präteritum and Passiv Perfekt",
+            grammarSubtopics: ["wurde + past participle", "ist/sind + past participle + worden", "Vorgangspassiv vs Zustandspassiv"],
+            vocabularyDomain: "Administration, institutions, bureaucracy",
+            targetNewWords: 20, skillFocus: .writing,
+            productionPrompt: "Write a formal paragraph describing how an application or project was processed, using Passiv Präteritum and Passiv Perfekt.",
+            examAlignment: "B1 Schreiben — institutional and formal register"
+        ),
+        CurriculumWeek(
+            weekNumber: 31, level: .b1,
+            grammarTopic: "Konjunktiv I (indirect speech)",
+            grammarSubtopics: ["sei, habe, werde (Konjunktiv I present)", "Reported speech with dass", "Reporting verbs: sagen, berichten, erklären, behaupten"],
+            vocabularyDomain: "Media, news, reporting",
+            targetNewWords: 20, skillFocus: .reading,
+            productionPrompt: "Report what was said in a news article or interview using Konjunktiv I and appropriate reporting verbs.",
+            examAlignment: "B1 Lesen — understanding reported speech in news texts"
+        ),
+        CurriculumWeek(
+            weekNumber: 32, level: .b1,
+            grammarTopic: "Genitive case and genitive prepositions",
+            grammarSubtopics: ["Genitive articles (des/der/eines/einer)", "Genitive prepositions: wegen, trotz, während, statt, innerhalb, außerhalb", "Genitive -s/-es on nouns"],
+            vocabularyDomain: "Society, environment, politics",
+            targetNewWords: 20, skillFocus: .writing,
+            productionPrompt: "Write a short opinion text about an environmental or social issue, using genitive constructions and wegen/trotz.",
+            examAlignment: "B1 Schreiben — formal opinion text, Forumsbeitrag"
+        ),
+        CurriculumWeek(
+            weekNumber: 33, level: .b1,
+            grammarTopic: "Prepositional objects and da-/wo-compounds",
+            grammarSubtopics: ["Verbs with fixed prepositions: warten auf, sich freuen über, denken an, bestehen aus", "da-compounds: darauf, darüber, davon, daran", "wo-compounds in questions: worauf, wovon"],
+            vocabularyDomain: "Abstract relationships, opinions, feelings",
+            targetNewWords: 20, skillFocus: .speaking,
+            productionPrompt: "Describe what you are looking forward to, thinking about, and excited about — using prepositional objects and da-compounds.",
+            examAlignment: "B1 Sprechen — expressing abstract ideas fluently"
+        ),
+        CurriculumWeek(
+            weekNumber: 34, level: .b1,
+            grammarTopic: "Indirect questions and lassen + infinitive",
+            grammarSubtopics: ["Indirect questions with ob, wer, was, wie (verb-final)", "lassen + infinitive (etw. machen lassen)", "Infinitivkonstruktionen: ohne zu, anstatt zu, um zu"],
+            vocabularyDomain: "Problem-solving, services, delegation",
+            targetNewWords: 20, skillFocus: .writing,
+            productionPrompt: "Write a formal email asking whether certain services are available and requesting that something be arranged for you, using indirect questions and lassen.",
+            examAlignment: "B1 Schreiben — formal inquiry email"
+        ),
+        CurriculumWeek(
+            weekNumber: 35, level: .b1,
+            grammarTopic: "Extended relative clauses (dative and genitive)",
+            grammarSubtopics: ["Dative relative pronouns (dem, der, denen)", "Genitive relative pronouns (dessen, deren)", "Prepositional relative clauses (auf dem, für die)"],
+            vocabularyDomain: "Complex descriptions, roles, academic topics",
+            targetNewWords: 20, skillFocus: .reading,
+            productionPrompt: "Write a description of your ideal workplace or study environment using at least four relative clauses, including dative and genitive forms.",
+            examAlignment: "B1 Lesen/Schreiben — complex text comprehension and production"
+        ),
+        CurriculumWeek(
+            weekNumber: 36, level: .b1,
+            grammarTopic: "B1 consolidation: advanced connectors and text cohesion",
+            grammarSubtopics: ["Adversative: jedoch, allerdings, trotzdem, dennoch", "Consecutive: deshalb, deswegen, daher, sodass", "Temporal: sobald, solange, seitdem", "Concessive: obwohl, obgleich, auch wenn"],
+            vocabularyDomain: "Academic and formal argumentation",
+            targetNewWords: 20, skillFocus: .writing,
+            productionPrompt: "Write a structured Forumsbeitrag using at least five different connectors from this week, making a clear argument with supporting points.",
+            examAlignment: "B1 Schreiben — coherent formal argumentation"
+        ),
+
+        // MARK: Block 5 — B1 Exam Preparation (Weeks 37–40)
+        CurriculumWeek(
+            weekNumber: 37, level: .b1,
+            grammarTopic: "Goethe B1 Lesen — official format (5 Teile)",
+            grammarSubtopics: [
+                "Teil 1: Match 5 people to 8 texts (skimming for gist)",
+                "Teil 2: Longer text, 6 multiple-choice questions (reading for detail)",
+                "Teil 3: 5 short notices/texts, mark richtig/falsch",
+                "Teil 4: Four short texts on one topic, matching statements",
+                "Teil 5: Fill 5 gaps with the correct prepositions/connectors"
+            ],
+            vocabularyDomain: "All B1 domains",
+            targetNewWords: 10, skillFocus: .reading,
+            productionPrompt: "Work through a timed B1 reading task (45 min). Answer all comprehension questions, then write a two-sentence German summary of the main argument.",
+            examAlignment: "B1 Lesen — full official format (45 min, 5 Teile)"
+        ),
+        CurriculumWeek(
+            weekNumber: 38, level: .b1,
+            grammarTopic: "Goethe B1 Hören — official format (4 Teile)",
+            grammarSubtopics: [
+                "Teil 1: 6 short dialogues — choose the correct picture or option",
+                "Teil 2: Radio feature or interview — 6 true/false statements",
+                "Teil 3: 5 short announcements — match to situations A–H",
+                "Teil 4: Conversation between two people — 5 multiple-choice questions"
+            ],
+            vocabularyDomain: "All B1 domains",
+            targetNewWords: 10, skillFocus: .listening,
+            productionPrompt: "Listen to a TTS passage twice, note the three key facts, then write them as complete German sentences from memory.",
+            examAlignment: "B1 Hören — full official format (~40 min, 4 Teile)"
+        ),
+        CurriculumWeek(
+            weekNumber: 39, level: .b1,
+            grammarTopic: "Goethe B1 Schreiben — official format (2 Teile)",
+            grammarSubtopics: [
+                "Teil 1: Eine Mitteilung schreiben (~100 words, semi-formal email addressing 3–4 bullet points, 20 min)",
+                "Teil 2: Einen Forumsbeitrag schreiben (~150 words, argue a position on a social topic, 35 min)",
+                "Goethe rubric dimensions: Aufgabenerfüllung · kommunikative Gestaltung · formale Richtigkeit",
+                "Time: 5 min planning · 20 min Teil 1 · 35 min Teil 2 · 5 min Kontrolle"
+            ],
+            vocabularyDomain: "All B1 domains",
+            targetNewWords: 10, skillFocus: .writing,
+            productionPrompt: "Timed practice: (20 min) write a semi-formal email (~100 words) addressing exactly three given bullet points. Then (35 min) write a Forumsbeitrag (~150 words) arguing your position on a given social topic with a clear structure.",
+            examAlignment: "B1 Schreiben — full official format (60 min, 2 Teile)"
+        ),
+        CurriculumWeek(
+            weekNumber: 40, level: .b1,
+            grammarTopic: "Goethe B1 Sprechen — official format (3 Teile)",
+            grammarSubtopics: [
+                "Teil 1: Gemeinsam etwas planen — plan an event with a partner, make and respond to suggestions, agree or compromise (~3 min)",
+                "Teil 2: Ein Thema präsentieren — 2-min presentation from a prompt card (Einleitung → Hauptteil → Beispiel → Fazit)",
+                "Teil 3: Auf eine Präsentation reagieren — ask one question, give brief feedback (~1 min each)",
+                "Goethe rubric: Aufgabenerfüllung · Interaktion · Kohärenz · Wortschatz · Grammatik · Aussprache"
+            ],
+            vocabularyDomain: "All B1 domains",
+            targetNewWords: 10, skillFocus: .speaking,
+            productionPrompt: "Write out a full Präsentation (~2 min spoken) on a given topic using the four-part structure. Then write both sides of a Gemeinsam planen dialogue making and responding to at least three suggestions with counter-proposals.",
+            examAlignment: "B1 Sprechen — full official format (~15 min per pair, 3 Teile)"
         )
     ]
 }

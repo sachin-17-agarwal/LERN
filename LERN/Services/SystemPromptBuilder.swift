@@ -45,8 +45,9 @@ enum SystemPromptBuilder {
             """
         case .b1:
             languageOfInstruction = """
-            Conduct the lesson primarily in German. Switch to English only briefly when the \
-            student is clearly stuck or asks for clarification.
+            Conduct the entire lesson in German. Use English ONLY if the student explicitly \
+            asks for a translation or is clearly blocked on a concept. At B1 the student must \
+            practise thinking and responding in German — protect that immersion.
             """
         }
 
@@ -102,6 +103,17 @@ enum SystemPromptBuilder {
         Teach professional and academic German — NOT tourist German. Default to the formal \
         register (Sie) unless practising informal address is the explicit goal.
 
+        B1 SPRECHEN AWARENESS (weeks 27–40)
+        For speaking-focus weeks at B1, train the student for the three Goethe Sprechen Teile:
+        • Teil 1 Gemeinsam planen: prompt a joint planning dialogue — make a suggestion, \
+          react to theirs, agree, disagree, compromise. Key phrases: "Wie wäre es mit…?", \
+          "Das klingt gut, aber…", "Was hältst du davon?", "Einverstanden."
+        • Teil 2 Thema präsentieren: coach the 4-part structure — Einleitung (state the topic), \
+          Hauptteil (2–3 points with connectors), Beispiel (personal or general), \
+          Fazit (position statement). Time target: ~2 minutes.
+        • Teil 3 Reaktion: teach asking one good follow-up question and giving brief feedback \
+          ("Das fand ich interessant, weil…", "Ich hätte noch eine Frage: …").
+
         LESSON SHAPE (follow this arc across the dialogue)
         1. WARM-UP (1 exchange): one quick question the student can already answer, using \
            last week's material or this week's first vocabulary item.
@@ -139,20 +151,34 @@ enum SystemPromptBuilder {
             ? "none recorded yet"
             : context.recurringErrors.map { $0.rawValue }.joined(separator: ", ")
 
+        let isB1 = context.userLevel == .b1
+        let rubricNote = isB1 ? """
+
+        GOETHE B1 SCHREIBEN RUBRIC — score each dimension 0–5:
+        1. Aufgabenerfüllung: Did the student address all required points? Are the content, \
+           format, and length appropriate?
+        2. Kommunikative Gestaltung: Is the text well-structured, coherent, and appropriately \
+           connected? Is the register (formal/semi-formal) correct throughout?
+        3. Formale Richtigkeit: Grammar accuracy, spelling, and punctuation. Minor errors \
+           acceptable; systematic errors penalised.
+        Include these three scores in the JSON under "goethe_rubric".
+        """ : ""
+
         return """
         You are a German writing examiner. Analyse the student's German text below. They are at \
         level \(context.userLevel.badge), week \(context.weekNumber), focusing on \
         "\(context.grammarTopic)" and vocabulary domain "\(context.vocabularyDomain)". \
-        The writing task they were given: "\(context.productionPrompt)". \
-        Judge accuracy against their level — do not penalise structures they haven't learned \
-        yet, but DO note when they avoided this week's target grammar. \
-        Their recurring error categories are: \(recurring).
+        The writing task: "\(context.productionPrompt)". \
+        Judge accuracy against their level — do not penalise structures not yet taught, \
+        but DO flag when they avoided this week's target grammar (\(context.grammarTopic)). \
+        Their recurring errors: \(recurring).\(rubricNote)
 
-        Evaluate professional/academic register. Identify every error and classify each into \
-        exactly one of these categories (use the exact identifier): genderError, caseError, \
-        wordOrderError, tenseError, falseFriend, vocabularyGap, registerError, conjunctionError.
+        Evaluate professional/academic register (Sie-form default, no tourist German). \
+        Identify every error and classify each into exactly one of these identifiers: \
+        genderError, caseError, wordOrderError, tenseError, falseFriend, vocabularyGap, \
+        registerError, conjunctionError.
 
-        Also list any grammatical structures the student avoided (passive-knowledge indicators).
+        Also list any grammatical structures the student conspicuously avoided.
 
         Return ONLY valid JSON, no prose, no code fences, matching exactly this schema:
         {
@@ -164,7 +190,8 @@ enum SystemPromptBuilder {
           "vocabulary_used_correctly": 0,
           "vocabulary_errors": 0,
           "overall_feedback": "string",
-          "suggested_srs_items": ["string"]
+          "suggested_srs_items": ["string"],
+          "goethe_rubric": {"aufgabenerfuellung": 0, "kommunikative_gestaltung": 0, "formale_richtigkeit": 0}
         }
         """
     }
