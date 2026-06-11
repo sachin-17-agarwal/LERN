@@ -8,7 +8,7 @@ struct ExamPrepView: View {
 
     @State private var examVM: ExamViewModel?
     @State private var showExam = false
-    @State private var selectedLevel = "A2"
+    @State private var selectedLevel = "B1"
     @State private var showAPIKeyPrompt = false
 
     private var profile: UserProfile? { profiles.first }

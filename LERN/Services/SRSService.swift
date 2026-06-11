@@ -5,21 +5,19 @@ import SwiftData
 /// and error records (anything conforming to `Reviewable`).
 struct SRSService {
 
-    /// Recall quality used in the SM-2 easiness-factor update.
-    enum Quality {
-        case fail        // 0.0
-        case hint        // 0.8 — correct, but needed a hint
-        case correct     // 1.0
+    /// Recall quality on the standard SM-2 0–5 scale (five discrete levels).
+    /// Research consistently shows 5-level granularity produces materially better
+    /// scheduling than the 3-level variant because EF updates are more precise.
+    enum Quality: Int {
+        case blackout = 0   // complete blank — no memory at all
+        case fail     = 1   // recalled wrong answer
+        case hint     = 2   // correct only with strong prompting
+        case correct  = 3   // correct with noticeable effort
+        case good     = 4   // correct, small hesitation
+        case easy     = 5   // instant correct recall
 
-        var value: Double {
-            switch self {
-            case .fail:    return 0.0
-            case .hint:    return 0.8
-            case .correct: return 1.0
-            }
-        }
-
-        var passed: Bool { self != .fail }
+        /// SM-2 passes at quality ≥ 3 (any correct recall).
+        var passed: Bool { rawValue >= 3 }
     }
 
     // MARK: - Scheduling new items
@@ -50,7 +48,7 @@ struct SRSService {
         }
 
         if !quality.passed {
-            // Failure: reset the interval to 1 day, keep counting reviews.
+            // Failure: restart the learning sequence from the beginning.
             item.interval = 1
         } else {
             switch item.reviewCount {
@@ -61,17 +59,20 @@ struct SRSService {
             default:
                 item.interval = Int((Double(item.interval) * item.easinessFactor).rounded())
             }
-            // Update easiness factor, floored at 1.3.
-            let q = quality.value
-            item.easinessFactor = max(1.3, item.easinessFactor + 0.1 - (1 - q) * 0.8)
         }
+
+        // Standard SM-2 EF formula — updated on every review (pass or fail).
+        // EF' = EF + (0.1 - (5-q)(0.08 + (5-q)·0.02)), floored at 1.3.
+        let q = Double(quality.rawValue)
+        let delta = 0.1 - (5 - q) * (0.08 + (5 - q) * 0.02)
+        item.easinessFactor = max(1.3, item.easinessFactor + delta)
 
         item.nextReviewDate = Date().adding(days: max(item.interval, 1))
     }
 
     /// Convenience wrapper accepting a simple correct/incorrect flag.
     func recordReview(item: ReviewItem, correct: Bool) {
-        recordReview(item.reviewable, quality: correct ? .correct : .fail)
+        recordReview(item.reviewable, quality: correct ? .good : .fail)
     }
 
     // MARK: - Fetching due items

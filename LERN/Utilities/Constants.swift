@@ -17,7 +17,7 @@ enum Constants {
     }
 
     enum Curriculum {
-        static let totalWeeks = 28
+        static let totalWeeks = 40          // 12 A1 + 10 A2 + 4 A2 exam-prep + 8 B1 core + 4 B1 exam-prep
         /// Sessions covering a week required before the next week unlocks.
         static let sessionsToCompleteWeek = 5
         /// Standard target sessions per week.
@@ -52,12 +52,15 @@ enum Constants {
         static let phone = "(02) 8356 8343"
         static let url = "https://www.goethe.de/ins/au/en/spr/prf.html"
 
-        // Scoring (A2)
+        // Scoring — Goethe uses the same 60/75/25 structure for A2 and B1.
+        // Pass threshold: ≥ 60 total AND each of the four modules ≥ 60 %.
         static let passingTotal: Double = 60
         static let maxWrittenPoints: Double = 75
         static let maxOralPoints: Double = 25
-        static let minWrittenToPass: Double = 45
-        static let minOralToPass: Double = 15
+        static let minWrittenToPass: Double = 45   // 60 % of 75
+        static let minOralToPass: Double = 15      // 60 % of 25
+        /// Minimum score (0–100) each individual module must reach to pass.
+        static let modulePassThreshold: Double = 60
     }
 
     enum Notifications {
