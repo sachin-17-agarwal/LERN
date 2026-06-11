@@ -101,13 +101,16 @@ struct AzureSpeechService {
             throw AzureSpeechError.noSpeechDetected
         }
 
-        let pa = best["PronunciationAssessment"] as? [String: Any] ?? [:]
+        // The REST short-audio endpoint returns scores flat on the NBest
+        // entry; the Speech SDK nests them under "PronunciationAssessment".
+        // Accept both so a transport change can't silently zero all scores.
+        let pa = best["PronunciationAssessment"] as? [String: Any] ?? best
         let recognized = (best["Display"] as? String)
             ?? (json["DisplayText"] as? String)
             ?? (best["Lexical"] as? String) ?? ""
 
         let words: [WordScore] = (best["Words"] as? [[String: Any]] ?? []).map { w in
-            let wpa = w["PronunciationAssessment"] as? [String: Any] ?? [:]
+            let wpa = w["PronunciationAssessment"] as? [String: Any] ?? w
             return WordScore(
                 word: (w["Word"] as? String) ?? "",
                 accuracy: doubleValue(wpa["AccuracyScore"]),
@@ -129,6 +132,8 @@ struct AzureSpeechService {
         if let d = any as? Double { return d }
         if let i = any as? Int { return Double(i) }
         if let n = any as? NSNumber { return n.doubleValue }
+        // The REST API encodes some numeric fields as JSON strings.
+        if let s = any as? String, let d = Double(s) { return d }
         return 0
     }
 }
