@@ -370,8 +370,8 @@ final class SessionViewModel: Identifiable {
             return prev > 0 ? max(0, (prev - current) / prev) : 0.5
         } ?? 0.5
 
-        func clamp(_ v: Double) -> Double { min(100, max(0, v)) }
-        let gain = 1.5   // base points per session
+        func clamp(_ v: Double) -> Double { min(1.0, max(0, v)) }
+        let gain = 0.015   // ~1.5 percentage points per session (values are 0.0–1.0)
 
         switch weekData.skillFocus {
         case .reading:
