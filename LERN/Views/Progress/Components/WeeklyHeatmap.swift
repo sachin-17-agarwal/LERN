@@ -39,9 +39,8 @@ struct WeeklyHeatmap: View {
                 Text("More").font(.caption2).foregroundStyle(.secondary)
             }
         }
-        .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 16))
+        .lernCard()
     }
 
     private func color(for count: Int) -> Color {

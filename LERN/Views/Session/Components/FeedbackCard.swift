@@ -34,8 +34,7 @@ struct FeedbackCard: View {
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
-        .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 14))
+        .lernCard(padding: 14, radius: 14)
     }
 }

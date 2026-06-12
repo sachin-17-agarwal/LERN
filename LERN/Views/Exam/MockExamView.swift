@@ -64,8 +64,7 @@ struct MockExamView: View {
                             Text(passage).font(.subheadline)
                         }
                     }
-                    .padding()
-                    .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 12))
+                    .lernCard(radius: LernDesign.smallRadius)
                 }
 
                 ForEach(Array(section.questions.enumerated()), id: \.element.id) { index, question in
@@ -109,7 +108,7 @@ struct MockExamView: View {
                 ), axis: .vertical)
                 .lineLimit(2...6)
                 .padding(10)
-                .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 10))
+                .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             }
         }
         .padding(.vertical, 4)

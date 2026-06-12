@@ -53,6 +53,7 @@ struct PronunciationView: View {
                     .padding(.vertical, 20)
                 } else if let result = vm.result {
                     resultView(result)
+                        .transition(.opacity.combined(with: .scale(scale: 0.96)))
                 }
 
                 if let error = vm.errorMessage {
@@ -69,6 +70,7 @@ struct PronunciationView: View {
                     .disabled(vm.isRecording || vm.isAssessing)
             }
             .padding()
+            .animation(.spring(response: 0.45, dampingFraction: 0.85), value: vm.result != nil)
         }
         .alert("Microphone needed", isPresented: Binding(
             get: { vm.permissionDenied },
@@ -90,7 +92,8 @@ struct PronunciationView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(Color.lernAccent.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+        .background(Color.lernAccent.opacity(0.12),
+                    in: RoundedRectangle(cornerRadius: LernDesign.smallRadius, style: .continuous))
     }
 
     private func phraseCard(_ vm: PronunciationViewModel) -> some View {
@@ -104,8 +107,7 @@ struct PronunciationView: View {
             Text("Tap the speaker to hear it first").font(.caption2).foregroundStyle(.tertiary)
         }
         .frame(maxWidth: .infinity)
-        .padding()
-        .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 16))
+        .lernCard()
     }
 
     private func recordButton(_ vm: PronunciationViewModel) -> some View {
@@ -117,15 +119,18 @@ struct PronunciationView: View {
         } label: {
             ZStack {
                 Circle()
-                    .fill(vm.isRecording ? Color.lernError : Color.lernPrimary)
+                    .fill((vm.isRecording ? Color.lernError : Color.lernPrimary).gradient)
                     .frame(width: 84, height: 84)
+                    .shadow(color: (vm.isRecording ? Color.lernError : Color.lernPrimary).opacity(0.3),
+                            radius: 10, y: 4)
                 Image(systemName: vm.isRecording ? "stop.fill" : "mic.fill")
                     .font(.system(size: 32))
                     .foregroundStyle(.white)
             }
             .symbolEffect(.pulse, isActive: vm.isRecording)
+            .animation(.easeInOut(duration: 0.25), value: vm.isRecording)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.lernPressable)
         .disabled(vm.isAssessing)
         .accessibilityLabel(vm.isRecording ? "Stop and score" : "Start recording")
     }
@@ -138,13 +143,15 @@ struct PronunciationView: View {
             // Overall score ring + verdict
             VStack(spacing: 8) {
                 ZStack {
-                    Circle().stroke(scoreColor(result.pronunciation).opacity(0.2), lineWidth: 10)
+                    Circle().stroke(scoreColor(result.pronunciation).opacity(0.18), lineWidth: 10)
                     Circle()
                         .trim(from: 0, to: max(0.001, result.pronunciation / 100))
-                        .stroke(scoreColor(result.pronunciation), style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                        .stroke(scoreColor(result.pronunciation).lernRingGradient,
+                                style: StrokeStyle(lineWidth: 10, lineCap: .round))
                         .rotationEffect(.degrees(-90))
+                        .animation(.spring(response: 0.8, dampingFraction: 0.85), value: result.pronunciation)
                     VStack(spacing: 0) {
-                        Text("\(Int(result.pronunciation))").font(.title.weight(.bold))
+                        Text("\(Int(result.pronunciation))").font(.title.weight(.bold)).lernStatNumber()
                         Text("/100").font(.caption2).foregroundStyle(.secondary)
                     }
                 }
@@ -179,18 +186,17 @@ struct PronunciationView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
-        .padding()
-        .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 16))
+        .lernCard()
     }
 
     private func subScore(_ title: String, _ value: Double) -> some View {
         VStack(spacing: 4) {
-            Text("\(Int(value))").font(.title3.weight(.bold)).foregroundStyle(scoreColor(value))
+            Text("\(Int(value))").font(.title3.weight(.bold)).lernStatNumber().foregroundStyle(scoreColor(value))
             Text(title).font(.caption2).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
-        .background(Color.lernBackground, in: RoundedRectangle(cornerRadius: 10))
+        .background(Color.lernBackground, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     private func wordChip(_ word: WordScore) -> some View {

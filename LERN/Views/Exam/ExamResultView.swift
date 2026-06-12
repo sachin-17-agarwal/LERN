@@ -11,16 +11,18 @@ struct ExamResultView: View {
                 VStack(spacing: 8) {
                     Image(systemName: result.passed ? "checkmark.seal.fill" : "xmark.seal.fill")
                         .font(.system(size: 56))
-                        .foregroundStyle(result.passed ? Color.lernSuccess : Color.lernError)
+                        .foregroundStyle((result.passed ? Color.lernSuccess : Color.lernError).gradient)
+                        .symbolRenderingMode(.hierarchical)
                     Text(result.passed ? "Bestanden!" : "Noch nicht bestanden")
                         .font(.title2.weight(.bold))
+                        .fontDesign(.rounded)
                     Text("\(result.examLevel) · \(Int(result.totalScore))/100")
                         .font(.headline)
+                        .lernStatNumber()
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 16))
+                .lernCard()
 
                 // Per-skill breakdown
                 VStack(spacing: 12) {
@@ -29,15 +31,13 @@ struct ExamResultView: View {
                     skillRow(.writing, result.writingScore)
                     skillRow(.speaking, result.speakingScore)
                 }
-                .padding()
-                .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 16))
+                .lernCard()
 
                 if !result.feedbackNotes.isEmpty {
                     Text(result.feedbackNotes)
                         .font(.subheadline)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding()
-                        .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 16))
+                        .lernCard()
                 }
 
                 // Pass criteria reminder
@@ -60,7 +60,7 @@ struct ExamResultView: View {
             Label(skill.displayName, systemImage: skill.symbolName)
                 .foregroundStyle(Color.forSkill(skill))
             Spacer()
-            Text("\(Int(score))/100").fontWeight(.medium)
+            Text("\(Int(score))/100").fontWeight(.medium).lernStatNumber()
         }
     }
 }

@@ -27,13 +27,15 @@ struct MiniGauge: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(color.opacity(0.2), lineWidth: 6)
+                .stroke(color.opacity(0.18), lineWidth: 6)
             Circle()
                 .trim(from: 0, to: max(0.001, min(1, value)))
-                .stroke(color, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                .stroke(color.lernRingGradient, style: StrokeStyle(lineWidth: 6, lineCap: .round))
                 .rotationEffect(.degrees(-90))
+                .animation(.spring(response: 0.8, dampingFraction: 0.85), value: value)
             Text("\(Int(value * 100))")
                 .font(.caption2.weight(.bold))
+                .lernStatNumber()
         }
         .frame(width: 48, height: 48)
     }

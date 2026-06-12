@@ -19,6 +19,9 @@ struct SessionView: View {
 
                 phaseContent
                     .frame(maxHeight: .infinity)
+                    .transition(.opacity.combined(with: .move(edge: .trailing)))
+                    .animation(.spring(response: 0.45, dampingFraction: 0.85),
+                               value: viewModel.currentPhase)
 
                 Divider()
                 bottomBar
