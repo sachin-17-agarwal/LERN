@@ -363,7 +363,7 @@ final class SessionViewModel: Identifiable {
     private func updateSkillScores(session: StudySession) {
         let reviewAccuracy: Double = reviewItems.isEmpty ? 0.5 :
             Double(reviewCorrectCount) / Double(reviewItems.count)
-        let hadProduction = session.productionText?.isEmpty == false
+        let hadProduction = !session.productionText.isEmpty
         let errorsFixed: Double = productionAnalysis.map {
             let prev = Double(previousErrors.count)
             let current = Double($0.errors.count)
