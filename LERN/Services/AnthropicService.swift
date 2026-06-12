@@ -241,10 +241,16 @@ struct AnthropicService {
         case (.listening, "B1"):
             return """
             GOETHE B1 HÖREN FORMAT (4 Teile, ~40 min):
-            Generate Teil 2: write a 250-word radio interview transcript on a professional/social \
-            topic. Then generate 6 statements to mark as richtig (R) or falsch (F). \
-            Set options to ["richtig","falsch"] and correctAnswer to "richtig" or "falsch". maxPoints: 15.
-            The passage field should contain the interview transcript — the app plays it via TTS.
+            Generate Teil 2: write a 250-word AUTHENTIC two-speaker radio interview \
+            on a professional or social topic (e.g. remote work, volunteering, lifelong \
+            learning). The interview must feel natural: include brief hesitations ("also…", \
+            "ähm…", "ja genau"), one speaker self-correcting, and natural overlaps marked \
+            as "(beide lachen)" or "(Moderatorin unterbricht)". Use B1 vocabulary and \
+            sentence complexity — not simplified. Then generate 6 statements to mark \
+            richtig (R) or falsch (F); at least 3 should test INFERENCE (paraphrase of \
+            meaning), not verbatim lifting from the text. \
+            Set options to ["richtig","falsch"] and correctAnswer to "richtig" or "falsch". \
+            maxPoints: 15. The passage field contains the interview — the app plays it via TTS.
             """
         case (.writing, "B1"):
             return """
@@ -276,8 +282,11 @@ struct AnthropicService {
             """
         case (.listening, "A2"):
             return """
-            GOETHE A2 HÖREN FORMAT: write a 150-word dialogue transcript (everyday situation), \
-            then 5 richtig/falsch questions. options: ["richtig","falsch"]. maxPoints: 10.
+            GOETHE A2 HÖREN FORMAT: write a 150-word TWO-SPEAKER dialogue (everyday \
+            situation: phone call, shop, appointment). Include natural hesitations \
+            ("ähm", "also"), one clarification request ("Wie bitte?"), and at least one \
+            self-correction. Then 5 richtig/falsch questions — at least 2 testing inference. \
+            options: ["richtig","falsch"]. maxPoints: 10.
             """
         case (.writing, "A2"):
             return """

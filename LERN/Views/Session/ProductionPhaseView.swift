@@ -11,6 +11,9 @@ struct ProductionPhaseView: View {
 
                 if let analysis = viewModel.productionAnalysis {
                     resultsView(analysis)
+                } else if viewModel.revisionCount > 0 && !viewModel.previousErrors.isEmpty {
+                    previousErrorsPanel
+                    editor
                 } else {
                     editor
                 }
@@ -30,6 +33,30 @@ struct ProductionPhaseView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
         .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 14))
+    }
+
+    private var previousErrorsPanel: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Previous errors to fix:")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.lernError)
+            ForEach(Array(viewModel.previousErrors.enumerated()), id: \.offset) { _, item in
+                HStack(spacing: 6) {
+                    Text(item.wrong_text)
+                        .font(.caption)
+                        .foregroundStyle(Color.lernError)
+                    Text("→")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(item.corrected_text)
+                        .font(.caption)
+                        .foregroundStyle(Color.lernSuccess)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(Color.lernError.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
     }
 
     private var editor: some View {
@@ -79,6 +106,19 @@ struct ProductionPhaseView: View {
                             color: analysis.register_appropriate ? .lernSuccess : .lernError)
             }
 
+            // Comparison badge (shown after a revision)
+            if viewModel.revisionCount > 0 {
+                let fixed = viewModel.previousErrors.count - analysis.errors.count
+                let label = fixed > 0 ? "↓ \(fixed) error\(fixed == 1 ? "" : "s") fixed" : "No errors fixed yet"
+                Text(label)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(fixed > 0 ? Color.lernSuccess : Color.lernError)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background((fixed > 0 ? Color.lernSuccess : Color.lernError).opacity(0.12),
+                                in: Capsule())
+            }
+
             if !analysis.overall_feedback.isEmpty {
                 Text(analysis.overall_feedback.inlineMarkdown)
                     .font(.subheadline)
@@ -116,6 +156,17 @@ struct ProductionPhaseView: View {
             Text("These errors have been saved for review.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+
+            if viewModel.revisionCount == 0 {
+                Button {
+                    viewModel.startRevision()
+                } label: {
+                    Label("Revise & Improve", systemImage: "arrow.counterclockwise")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .tint(.lernPrimary)
+            }
         }
     }
 

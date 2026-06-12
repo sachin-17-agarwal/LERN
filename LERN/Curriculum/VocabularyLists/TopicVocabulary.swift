@@ -523,7 +523,7 @@ enum TopicVocabulary {
             VocabSeed(german: "Wie wäre es mit…?", article: nil, plural: nil, english: "How about…?", example: "Wie wäre es mit einem Picknick im Park?", topic: "b1_speaking"),
             VocabSeed(german: "Das klingt gut, aber…", article: nil, plural: nil, english: "That sounds good, but…", example: "Das klingt gut, aber ich habe am Samstag keine Zeit.", topic: "b1_speaking"),
             VocabSeed(german: "zusammenfassen", article: nil, plural: nil, english: "to summarise", example: "Ich fasse meine wichtigsten Punkte kurz zusammen.", topic: "b1_speaking")
-        ],
+        ]
 
         // Week 27 — Polite requests, hypotheticals (Konjunktiv II week)
         27: [
@@ -570,7 +570,7 @@ enum TopicVocabulary {
 /// Builds `VocabularyItem` model objects for a given week from the seed data.
 enum VocabularyLibrary {
     static func items(forWeek week: Int) -> [VocabularyItem] {
-        let seeds = CoreVocabulary.byWeek[week] ?? TopicVocabulary.byWeek[week] ?? []
+        let seeds = (CoreVocabulary.byWeek[week] ?? []) + (TopicVocabulary.byWeek[week] ?? []) + (FrequencyVocabulary.byWeek[week] ?? [])
         let weekData = CurriculumService.week(week)
         return seeds.map { seed in
             VocabularyItem(
