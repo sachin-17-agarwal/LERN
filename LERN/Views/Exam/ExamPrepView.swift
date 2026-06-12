@@ -143,7 +143,7 @@ struct ExamPrepView: View {
         guard KeychainManager.hasAPIKey else { showAPIKeyPrompt = true; return }
         let vm = ExamViewModel(profile: profile, modelContext: modelContext)
         vm.selectedLevel = selectedLevel
-        vm.isGenerating = true
+        vm.isGenerating = true   // show spinner immediately on first render
         examVM = vm
         Task { await vm.startFullMock() }
     }
@@ -152,7 +152,7 @@ struct ExamPrepView: View {
         guard KeychainManager.hasAPIKey else { showAPIKeyPrompt = true; return }
         let vm = ExamViewModel(profile: profile, modelContext: modelContext)
         vm.selectedLevel = selectedLevel
-        vm.isGenerating = true
+        vm.isGenerating = true   // show spinner immediately on first render
         examVM = vm
         Task { await vm.startSkillPractice(skill) }
     }
