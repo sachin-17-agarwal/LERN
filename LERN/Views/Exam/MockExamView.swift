@@ -14,10 +14,26 @@ struct MockExamView: View {
                     generating
                 } else if let result = finished {
                     ExamResultView(result: result)
+                } else if let error = viewModel.errorMessage {
+                    VStack(spacing: 16) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.largeTitle)
+                            .foregroundStyle(Color.lernError)
+                        Text("Couldn't generate exam")
+                            .font(.headline)
+                        Text(error)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                        Button("Close") { dismiss() }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.lernPrimary)
+                    }
+                    .padding()
                 } else if let section = viewModel.currentSection {
                     sectionView(section)
                 } else {
-                    ContentUnavailableView("No exam loaded", systemImage: "doc.questionmark")
+                    generating
                 }
             }
             .navigationTitle("Mock Exam \(viewModel.selectedLevel)")
