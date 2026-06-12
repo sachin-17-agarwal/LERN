@@ -100,8 +100,6 @@ final class SessionViewModel: Identifiable {
     var isAnalysing: Bool = false
     var revisionCount: Int = 0
     var previousErrors: [ProductionAnalysis.ErrorItem] = []
-    var revisionCount: Int = 0
-    var previousErrors: [ProductionAnalysis.ErrorItem] = []
 
     // MARK: - Error surface
     var errorMessage: String?
@@ -280,13 +278,6 @@ final class SessionViewModel: Identifiable {
         } catch {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
-    }
-
-    func startRevision() {
-        previousErrors = productionAnalysis?.errors ?? []
-        productionAnalysis = nil
-        productionText = ""
-        revisionCount += 1
     }
 
     func startRevision() {
