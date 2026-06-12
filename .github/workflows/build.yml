@@ -23,4 +23,4 @@ jobs:
             -scheme LERN \
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
-            | tail -100
+            | grep -E "error:|warning:|BUILD FAILED|BUILD SUCCEEDED" | head -60
