@@ -364,11 +364,12 @@ final class SessionViewModel: Identifiable {
         let reviewAccuracy: Double = reviewItems.isEmpty ? 0.5 :
             Double(reviewCorrectCount) / Double(reviewItems.count)
         let hadProduction = !session.productionText.isEmpty
-        let errorsFixed: Double = productionAnalysis.map {
-            let prev = Double(previousErrors.count)
-            let current = Double($0.errors.count)
-            return prev > 0 ? max(0, (prev - current) / prev) : 0.5
-        } ?? 0.5
+        let errorsFixed: Double
+        if let analysis = productionAnalysis, previousErrors.count > 0 {
+            errorsFixed = max(0, Double(previousErrors.count - analysis.errors.count) / Double(previousErrors.count))
+        } else {
+            errorsFixed = 0.5
+        }
 
         func clamp(_ v: Double) -> Double { min(1.0, max(0, v)) }
         let gain = 0.015   // ~1.5 percentage points per session (values are 0.0–1.0)
