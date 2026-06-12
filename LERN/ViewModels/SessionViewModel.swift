@@ -226,7 +226,8 @@ final class SessionViewModel: Identifiable {
             recurringErrors: ErrorAnalysis.topRecurringCategories(for: profile),
             skillScores: profile.skillScores,
             sessionPhase: phase,
-            conversationHistory: history
+            conversationHistory: history,
+            sessionNumberThisWeek: profile.sessions.filter { $0.weekNumber == weekData.weekNumber }.count
         )
     }
 
@@ -352,8 +353,44 @@ final class SessionViewModel: Identifiable {
         profile.sessions.append(session)
 
         updateStreakAndMinutes(addedMinutes: session.durationMinutes)
+        updateSkillScores(session: session)
         try? modelContext.save()
         CurriculumService.unlockNextWeek(for: profile, in: modelContext)
+    }
+
+    /// Nudges skill scores based on what the session covered.
+    /// Scores are 0–100; each session can move a skill by up to ~2 points.
+    private func updateSkillScores(session: StudySession) {
+        let reviewAccuracy: Double = reviewItems.isEmpty ? 0.5 :
+            Double(reviewCorrectCount) / Double(reviewItems.count)
+        let hadProduction = session.productionText?.isEmpty == false
+        let errorsFixed: Double = productionAnalysis.map {
+            let prev = Double(previousErrors.count)
+            let current = Double($0.errors.count)
+            return prev > 0 ? max(0, (prev - current) / prev) : 0.5
+        } ?? 0.5
+
+        func clamp(_ v: Double) -> Double { min(100, max(0, v)) }
+        let gain = 1.5   // base points per session
+
+        switch weekData.skillFocus {
+        case .reading:
+            profile.readingScore   = clamp(profile.readingScore   + gain * reviewAccuracy)
+            profile.listeningScore = clamp(profile.listeningScore + gain * 0.3)
+        case .listening:
+            profile.listeningScore = clamp(profile.listeningScore + gain * reviewAccuracy)
+            profile.readingScore   = clamp(profile.readingScore   + gain * 0.3)
+        case .writing:
+            profile.writingScore   = clamp(profile.writingScore   + gain * (hadProduction ? (0.5 + 0.5 * errorsFixed) : 0.3))
+            profile.readingScore   = clamp(profile.readingScore   + gain * 0.3)
+        case .speaking:
+            profile.speakingScore  = clamp(profile.speakingScore  + gain * reviewAccuracy)
+            profile.listeningScore = clamp(profile.listeningScore + gain * 0.3)
+        }
+        // All sessions improve reading slightly via SRS review
+        if weekData.skillFocus != .reading {
+            profile.readingScore = clamp(profile.readingScore + gain * 0.2 * reviewAccuracy)
+        }
     }
 
     private func updateStreakAndMinutes(addedMinutes: Int) {

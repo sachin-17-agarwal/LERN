@@ -19,9 +19,9 @@ enum Constants {
     enum Curriculum {
         static let totalWeeks = 40          // 12 A1 + 10 A2 + 4 A2 exam-prep + 8 B1 core + 4 B1 exam-prep
         /// Sessions covering a week required before the next week unlocks.
-        static let sessionsToCompleteWeek = 5
+        static let sessionsToCompleteWeek = 3
         /// Standard target sessions per week.
-        static let weeklySessionTarget = 5
+        static let weeklySessionTarget = 3
     }
 
     enum Audio {

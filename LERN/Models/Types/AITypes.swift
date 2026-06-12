@@ -35,6 +35,8 @@ struct SessionContext: Sendable {
     let skillScores: [SkillType: Double]
     let sessionPhase: SessionPhase
     let conversationHistory: [Message]
+    /// 1-based count of sessions completed on this week so far (0 = first session).
+    let sessionNumberThisWeek: Int
 }
 
 /// Decoded structured feedback returned by the model after Phase 3 production.
