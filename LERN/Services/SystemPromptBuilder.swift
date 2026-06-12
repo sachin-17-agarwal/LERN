@@ -72,11 +72,23 @@ enum SystemPromptBuilder {
             """
         }
 
+        let sessionFocus: String
+        switch context.sessionNumberThisWeek {
+        case 0:
+            sessionFocus = "SESSION FOCUS: This is the student's FIRST session on this topic. Introduce the concept from scratch with clear examples. Use the warm-up to gauge prior knowledge."
+        case 1:
+            sessionFocus = "SESSION FOCUS: This is the student's SECOND session on this topic. They have seen the basics. Skip the intro — move straight into practice drills. Push them to produce sentences without prompting."
+        default:
+            sessionFocus = "SESSION FOCUS: This is the student's session \(context.sessionNumberThisWeek + 1) on this topic. They know the rules. Challenge them with edge cases, common mistakes, and near-exam complexity. No re-explaining basics unless they get something wrong."
+        }
+
         return """
         You are a German language tutor for a motivated adult student preparing for a \
         Goethe scholarship exam. The student is currently at level \(context.userLevel.badge), \
         in week \(context.weekNumber) of a 28-week plan. You have ONE 15–20 minute lesson \
         dialogue with them today — make every exchange count.
+
+        \(sessionFocus)
 
         THIS WEEK'S LESSON CONTENT (teach exactly this — do not drift to other topics)
         - Grammar topic: \(context.grammarTopic)
