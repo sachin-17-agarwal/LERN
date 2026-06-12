@@ -3,6 +3,27 @@ import Foundation
 /// Builds the dynamic system prompts for tutor sessions and production analysis.
 enum SystemPromptBuilder {
 
+    private static let germanPhonemeGuide = """
+    GERMAN PRONUNCIATION GUIDE (use proactively in pronunciation weeks and whenever \
+    the student produces a phoneme error)
+    KEY SOUNDS:
+    • ä/Ä: like English "air" without the r — Mädchen, spät
+    • ö/Ö: say "ay" with rounded lips — schön, können
+    • ü/Ü: say "ee" with rounded lips — über, fühlen
+    • ß: always sharp "ss", never voiced — Straße, weiß
+    • ch (after a/o/u): guttural, from the back of the throat — Bach, noch, Buch
+    • ch (after e/i/ei/eu/äu): softer hiss, near front of mouth — ich, nicht, weich
+    • v: sounds like English "f" — Vogel, Vater, Vers
+    • w: sounds like English "v" — Wasser, wohnen, Wort
+    • z: always "ts" — Zeit, zwischen, Zeitung
+    • sp/st at word start: "shp"/"sht" — Sprache, Student, spielen
+    • r: uvular (throat) or tapped — reden, arbeiten (never English r)
+    • long vowels: doubled letters or vowel+h or vowel+single consonant — Bahn, See, Vieh
+    • short vowels: vowel before two consonants — backen, kommen, sitzen
+    WHEN TO USE: When a PRACTICE line result shows a word scored below 70%, give the \
+    specific sound rule for the weakest phoneme in that word.
+    """
+
     /// System prompt for live tutor dialogue (review / lesson phases).
     static func build(for context: SessionContext) -> String {
         let recurring = context.recurringErrors.isEmpty
@@ -99,6 +120,9 @@ enum SystemPromptBuilder {
         - NEVER ask the student to say something aloud WITHOUT a PRACTICE line (there is \
           no microphone otherwise), and never ask them to type a phonetic transcription.
 
+        PRONUNCIATION REFERENCE
+        \(germanPhonemeGuide)
+
         REGISTER
         Teach professional and academic German — NOT tourist German. Default to the formal \
         register (Sie) unless practising informal address is the explicit goal.
@@ -113,6 +137,19 @@ enum SystemPromptBuilder {
           Fazit (position statement). Time target: ~2 minutes.
         • Teil 3 Reaktion: teach asking one good follow-up question and giving brief feedback \
           ("Das fand ich interessant, weil…", "Ich hätte noch eine Frage: …").
+
+        LISTENING STRATEGIES (teach these when skillFocus is listening)
+        Train the student in the four strategies Goethe Hören rewards:
+        1. PREDICT: before listening, have the student read the statements/questions \
+           and predict what topic and register to expect.
+        2. LISTEN FOR GIST: on first pass, ignore unknown words — catch topic, \
+           speaker attitude, and overall argument.
+        3. LISTEN FOR DETAIL: on second pass, focus on specific numbers, names, \
+           dates, and cause-effect relationships — these are typical question targets.
+        4. INFERENCE: teach that Goethe often asks about implied meaning, not \
+           verbatim phrases — the correct answer paraphrases, not quotes.
+        In listening-focus weeks, explicitly coach these strategies with the \
+        week's vocabulary domain before drilling with PRACTICE lines.
 
         LESSON SHAPE (follow this arc across the dialogue)
         1. WARM-UP (1 exchange): one quick question the student can already answer, using \

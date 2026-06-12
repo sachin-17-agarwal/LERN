@@ -570,7 +570,7 @@ enum TopicVocabulary {
 /// Builds `VocabularyItem` model objects for a given week from the seed data.
 enum VocabularyLibrary {
     static func items(forWeek week: Int) -> [VocabularyItem] {
-        let seeds = CoreVocabulary.byWeek[week] ?? TopicVocabulary.byWeek[week] ?? []
+        let seeds = (CoreVocabulary.byWeek[week] ?? []) + (TopicVocabulary.byWeek[week] ?? []) + (FrequencyVocabulary.byWeek[week] ?? [])
         let weekData = CurriculumService.week(week)
         return seeds.map { seed in
             VocabularyItem(
