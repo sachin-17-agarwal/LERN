@@ -353,6 +353,7 @@ final class SessionViewModel: Identifiable {
 
         updateStreakAndMinutes(addedMinutes: session.durationMinutes)
         try? modelContext.save()
+        CurriculumService.unlockNextWeek(for: profile, in: modelContext)
     }
 
     private func updateStreakAndMinutes(addedMinutes: Int) {
