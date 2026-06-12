@@ -46,7 +46,7 @@ struct HomeView: View {
             // Header
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(vm.greeting).font(.title2.weight(.bold))
+                    Text(vm.greeting).font(.title2.weight(.bold)).fontDesign(.rounded)
                     Text("Week \(vm.currentWeek) · \(vm.currentWeekData.level.badge)")
                         .font(.subheadline).foregroundStyle(.secondary)
                 }
@@ -67,8 +67,8 @@ struct HomeView: View {
                 Text("Skills").font(.headline)
                 QuickStatsRow(skillScores: vm.skillScores)
             }
-            .padding()
-            .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 16))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .lernCard()
 
             // This week's progress
             VStack(alignment: .leading, spacing: 8) {
@@ -77,12 +77,13 @@ struct HomeView: View {
                     Spacer()
                     Text("\(vm.sessionsThisWeek)/\(vm.weeklyTarget) sessions")
                         .font(.subheadline).foregroundStyle(.secondary)
+                        .lernStatNumber()
                 }
                 ProgressView(value: vm.weeklyProgress)
                     .tint(.lernPrimary)
+                    .animation(.easeOut(duration: 0.6), value: vm.weeklyProgress)
             }
-            .padding()
-            .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 16))
+            .lernCard()
 
             // Quick actions
             HStack(spacing: 12) {
@@ -115,6 +116,7 @@ struct HomeView: View {
                     if let count, count > 0 {
                         Text("\(count)")
                             .font(.caption2.weight(.bold))
+                            .lernStatNumber()
                             .foregroundStyle(.white)
                             .padding(5)
                             .background(Color.lernAccent, in: Circle())
@@ -125,9 +127,13 @@ struct HomeView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
-            .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 14))
+            .background(
+                Color.lernSurface,
+                in: RoundedRectangle(cornerRadius: LernDesign.smallRadius, style: .continuous)
+            )
+            .shadow(color: Color.black.opacity(0.05), radius: 6, y: 2)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.lernPressable)
     }
 
     private func startSession(profile: UserProfile) {

@@ -19,6 +19,8 @@ struct ProductionPhaseView: View {
                 }
             }
             .padding()
+            .animation(.spring(response: 0.45, dampingFraction: 0.85),
+                       value: viewModel.productionAnalysis == nil)
         }
     }
 
@@ -31,8 +33,7 @@ struct ProductionPhaseView: View {
                 .font(.headline)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 14))
+        .lernCard(radius: 14)
     }
 
     private var previousErrorsPanel: some View {
@@ -56,7 +57,8 @@ struct ProductionPhaseView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(Color.lernError.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
+        .background(Color.lernError.opacity(0.07),
+                    in: RoundedRectangle(cornerRadius: LernDesign.smallRadius, style: .continuous))
     }
 
     private var editor: some View {
@@ -64,7 +66,9 @@ struct ProductionPhaseView: View {
             TextEditor(text: $viewModel.productionText)
                 .frame(minHeight: 220)
                 .padding(8)
-                .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 12))
+                .scrollContentBackground(.hidden)
+                .background(Color.lernSurface,
+                            in: RoundedRectangle(cornerRadius: LernDesign.smallRadius, style: .continuous))
                 .overlay(alignment: .topLeading) {
                     if viewModel.productionText.isEmpty {
                         Text("Schreibe deinen Text hier auf Deutsch…")
@@ -122,9 +126,8 @@ struct ProductionPhaseView: View {
             if !analysis.overall_feedback.isEmpty {
                 Text(analysis.overall_feedback.inlineMarkdown)
                     .font(.subheadline)
-                    .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 12))
+                    .lernCard(radius: LernDesign.smallRadius)
             }
 
             if !analysis.errors.isEmpty {
@@ -150,7 +153,8 @@ struct ProductionPhaseView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding()
-                .background(Color.lernAccent.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+                .background(Color.lernAccent.opacity(0.1),
+                            in: RoundedRectangle(cornerRadius: LernDesign.smallRadius, style: .continuous))
             }
 
             Text("These errors have been saved for review.")
@@ -172,11 +176,12 @@ struct ProductionPhaseView: View {
 
     private func summaryStat(title: String, value: String, color: Color) -> some View {
         VStack(spacing: 4) {
-            Text(value).font(.title2.weight(.bold)).foregroundStyle(color)
+            Text(value).font(.title2.weight(.bold)).lernStatNumber().foregroundStyle(color)
             Text(title).font(.caption2).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 10)
-        .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 12))
+        .background(Color.lernSurface,
+                    in: RoundedRectangle(cornerRadius: LernDesign.smallRadius, style: .continuous))
     }
 }

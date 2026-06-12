@@ -47,3 +47,79 @@ extension Color {
         }
     }
 }
+
+// MARK: - Design system
+
+/// Shared layout metrics so every card and control uses the same geometry.
+enum LernDesign {
+    /// Standard corner radius for cards.
+    static let cardRadius: CGFloat = 16
+    /// Smaller radius for nested / compact elements.
+    static let smallRadius: CGFloat = 12
+    /// Default card padding.
+    static let cardPadding: CGFloat = 16
+}
+
+/// The standard LERN card: surface colour, continuous rounded corners,
+/// and a whisper of depth. Use everywhere a content card is needed so
+/// the whole app shares one geometry.
+private struct LernCardModifier: ViewModifier {
+    var padding: CGFloat
+    var radius: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .padding(padding)
+            .background(
+                Color.lernSurface,
+                in: RoundedRectangle(cornerRadius: radius, style: .continuous)
+            )
+            .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 2)
+    }
+}
+
+/// Gently scales primary buttons and tappable cards while pressed.
+struct LernPressableButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .opacity(configuration.isPressed ? 0.85 : 1)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
+    }
+}
+
+extension ButtonStyle where Self == LernPressableButtonStyle {
+    /// A plain button style with a subtle pressed scale, for tappable cards.
+    static var lernPressable: LernPressableButtonStyle { LernPressableButtonStyle() }
+}
+
+extension View {
+    /// Applies the shared LERN card treatment: padding, surface background
+    /// with continuous corners, and a soft shadow.
+    func lernCard(padding: CGFloat = LernDesign.cardPadding,
+                  radius: CGFloat = LernDesign.cardRadius) -> some View {
+        modifier(LernCardModifier(padding: padding, radius: radius))
+    }
+
+    /// Rounded, monospaced-digit styling for stats and counters, with a
+    /// numeric content transition so changing values tick gracefully.
+    func lernStatNumber() -> some View {
+        self
+            .fontDesign(.rounded)
+            .monospacedDigit()
+            .contentTransition(.numericText())
+    }
+}
+
+extension Color {
+    /// A soft angular gradient of this colour for progress rings and gauges —
+    /// adds a little life without noise.
+    var lernRingGradient: AngularGradient {
+        AngularGradient(
+            gradient: Gradient(colors: [self.opacity(0.7), self]),
+            center: .center,
+            startAngle: .degrees(-90),
+            endAngle: .degrees(270)
+        )
+    }
+}

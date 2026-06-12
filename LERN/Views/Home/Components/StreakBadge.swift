@@ -7,9 +7,19 @@ struct StreakBadge: View {
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: "flame.fill")
-                .foregroundStyle(streak > 0 ? Color.lernAccent : .gray)
+                .foregroundStyle(
+                    streak > 0
+                        ? AnyShapeStyle(
+                            LinearGradient(
+                                colors: [Color.lernAccent, Color.lernError],
+                                startPoint: .top, endPoint: .bottom
+                            )
+                        )
+                        : AnyShapeStyle(Color.gray)
+                )
             Text("\(streak)")
                 .font(.headline)
+                .lernStatNumber()
             Text(streak == 1 ? "day" : "days")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -17,5 +27,6 @@ struct StreakBadge: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(Color.lernSurface, in: Capsule())
+        .shadow(color: Color.black.opacity(0.05), radius: 6, y: 2)
     }
 }

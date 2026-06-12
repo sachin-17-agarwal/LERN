@@ -30,12 +30,16 @@ struct ExamReadinessCard: View {
                         Text(level).font(.caption.weight(.semibold))
                         Text("\(Int(recommendation.estimatedScores[level] ?? 0))")
                             .font(.title3.weight(.bold))
+                            .lernStatNumber()
                             .foregroundStyle(level == recommendation.level ? Color.lernSuccess : .primary)
                         Text("/100").font(.caption2).foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
-                    .background(Color.lernBackground, in: RoundedRectangle(cornerRadius: 10))
+                    .background(
+                        Color.lernBackground,
+                        in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    )
                 }
             }
 
@@ -51,9 +55,8 @@ struct ExamReadinessCard: View {
                 }
             }
         }
-        .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 16))
+        .lernCard()
     }
 
     private func contactRow(icon: String, text: String) -> some View {

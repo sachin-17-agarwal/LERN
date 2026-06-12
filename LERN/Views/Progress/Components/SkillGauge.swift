@@ -9,17 +9,20 @@ struct SkillGauge: View {
         VStack(spacing: 8) {
             ZStack {
                 Circle()
-                    .stroke(Color.forSkill(skill).opacity(0.2), lineWidth: 10)
+                    .stroke(Color.forSkill(skill).opacity(0.18), lineWidth: 10)
                 Circle()
                     .trim(from: 0, to: max(0.001, min(1, value)))
-                    .stroke(Color.forSkill(skill), style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                    .stroke(Color.forSkill(skill).lernRingGradient,
+                            style: StrokeStyle(lineWidth: 10, lineCap: .round))
                     .rotationEffect(.degrees(-90))
+                    .animation(.spring(response: 0.8, dampingFraction: 0.85), value: value)
                 VStack(spacing: 2) {
                     Image(systemName: skill.symbolName)
                         .font(.caption)
                         .foregroundStyle(Color.forSkill(skill))
                     Text("\(Int(value * 100))%")
                         .font(.headline)
+                        .lernStatNumber()
                 }
             }
             .frame(width: 88, height: 88)

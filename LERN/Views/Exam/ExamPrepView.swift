@@ -61,9 +61,13 @@ struct ExamPrepView: View {
                 .frame(maxWidth: .infinity)
                 .padding()
                 .foregroundStyle(.white)
-                .background(Color.lernPrimary, in: RoundedRectangle(cornerRadius: 16))
+                .background(
+                    Color.lernPrimary.gradient,
+                    in: RoundedRectangle(cornerRadius: LernDesign.cardRadius, style: .continuous)
+                )
+                .shadow(color: Color.lernPrimary.opacity(0.25), radius: 10, y: 4)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.lernPressable)
 
             // Skill-specific practice
             VStack(alignment: .leading, spacing: 12) {
@@ -79,11 +83,10 @@ struct ExamPrepView: View {
                                 Text(skill.displayName).font(.caption2).foregroundStyle(.secondary)
                             }
                             .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 14))
+                            .lernCard(radius: 14)
                             .foregroundStyle(Color.forSkill(skill))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.lernPressable)
                     }
                 }
             }
@@ -100,8 +103,18 @@ struct ExamPrepView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Past Results").font(.headline)
             if results.isEmpty {
-                Text("No mock exams taken yet.")
-                    .font(.footnote).foregroundStyle(.secondary)
+                VStack(spacing: 8) {
+                    Image(systemName: "doc.text.magnifyingglass")
+                        .font(.title2)
+                        .foregroundStyle(.tertiary)
+                    Text("No mock exams taken yet.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                    Text("Take a mock exam to see your results here.")
+                        .font(.caption2).foregroundStyle(.tertiary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 20)
+                .lernCard(radius: LernDesign.smallRadius)
             } else {
                 ForEach(results) { result in
                     NavigationLink {
@@ -113,16 +126,16 @@ struct ExamPrepView: View {
                             VStack(alignment: .leading) {
                                 Text("\(result.examLevel) · \(Int(result.totalScore))/100")
                                     .fontWeight(.medium)
+                                    .lernStatNumber()
                                 Text(result.date.shortDateString)
                                     .font(.caption).foregroundStyle(.secondary)
                             }
                             Spacer()
                             Image(systemName: "chevron.right").foregroundStyle(.tertiary)
                         }
-                        .padding()
-                        .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 12))
+                        .lernCard(radius: LernDesign.smallRadius)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.lernPressable)
                 }
             }
         }

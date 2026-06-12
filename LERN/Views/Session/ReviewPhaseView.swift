@@ -11,6 +11,7 @@ struct ReviewPhaseView: View {
                 VStack(spacing: 6) {
                     ProgressView(value: Double(viewModel.reviewIndex), total: Double(max(viewModel.reviewItems.count, 1)))
                         .tint(.lernPrimary)
+                        .animation(.easeOut(duration: 0.4), value: viewModel.reviewIndex)
                     Text(viewModel.reviewProgressText)
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -95,9 +96,8 @@ struct ReviewPhaseView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding()
-        .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 16))
-        .animation(.easeInOut(duration: 0.2), value: revealed)
+        .lernCard()
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: revealed)
     }
 
     @ViewBuilder
@@ -115,15 +115,16 @@ struct ReviewPhaseView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 16))
+        .lernCard()
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: revealed)
     }
 
     private var emptyState: some View {
         VStack(spacing: 12) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.largeTitle)
-                .foregroundStyle(Color.lernSuccess)
+                .foregroundStyle(Color.lernSuccess.gradient)
+                .symbolRenderingMode(.hierarchical)
             Text("No reviews due")
                 .font(.headline)
             Text("Nothing scheduled right now. Continue to the lesson.")

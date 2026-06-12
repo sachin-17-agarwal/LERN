@@ -34,6 +34,7 @@ struct SessionStartCard: View {
             .buttonStyle(.borderedProminent)
             .tint(.white)
             .foregroundStyle(Color.lernPrimary)
+            .fontDesign(.rounded)
         }
         .padding(20)
         .frame(maxWidth: .infinity)
@@ -46,8 +47,8 @@ struct SessionStartCard: View {
                 ],
                 startPoint: .topLeading, endPoint: .bottomTrailing
             ),
-            in: RoundedRectangle(cornerRadius: 20)
+            in: RoundedRectangle(cornerRadius: 20, style: .continuous)
         )
-        .shadow(color: Color.lernPrimary.opacity(0.3), radius: 10, y: 5)
+        .shadow(color: Color.lernPrimary.opacity(0.25), radius: 12, y: 6)
     }
 }
