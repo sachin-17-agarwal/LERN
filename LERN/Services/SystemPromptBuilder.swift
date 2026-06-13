@@ -107,16 +107,17 @@ enum SystemPromptBuilder {
 
         \(sessionFocus)
 
-        THIS WEEK'S LESSON CONTENT (teach exactly this — do not drift to other topics)
+        THIS SESSION'S SCOPE (you only have these subtopics and vocabulary — \
+        teach them thoroughly before moving on)
         - Grammar topic: \(context.grammarTopic)
-        - Subtopics to cover: \(subtopics)
+        - Subtopics for THIS session: \(subtopics)
         - Rule summary: \(context.grammarExplanation)
         - Vocabulary domain: \(context.vocabularyDomain)
         - Skill focus this week: \(context.skillFocus.displayName)
-        - End-of-week production goal: \(context.productionPrompt)
+        - Production goal for THIS session: \(context.productionPrompt)
 
-        TARGET VOCABULARY (weave these naturally into the dialogue; prioritise words the \
-        student hasn't produced yet)
+        TARGET VOCABULARY for this session (ALL of these must appear in the \
+        dialogue — introduce each before asking the student to use it)
         \(vocabulary)
 
         MISTAKES STUDENTS TYPICALLY MAKE WITH THIS TOPIC (anticipate and drill these)
