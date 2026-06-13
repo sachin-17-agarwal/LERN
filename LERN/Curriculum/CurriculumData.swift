@@ -62,7 +62,7 @@ enum CurriculumData {
         CurriculumWeek(
             weekNumber: 7, level: .a1,
             grammarTopic: "Negation: nicht vs kein",
-            grammarSubtopics: ["nicht with verbs/adjectives", "kein with nouns", "Position of nicht"],
+            grammarSubtopics: ["nicht with verbs/adjectives", "kein with nouns", "Position of nicht", "Imperative (du/Sie forms)"],
             vocabularyDomain: "Daily routine",
             targetNewWords: 20, skillFocus: .writing,
             productionPrompt: "Describe your daily routine, including what you do NOT do.",
@@ -181,7 +181,7 @@ enum CurriculumData {
         CurriculumWeek(
             weekNumber: 20, level: .a2,
             grammarTopic: "Future tense (werden), infinitive constructions (um…zu, ohne…zu)",
-            grammarSubtopics: ["werden + infinitive", "um…zu purpose", "ohne…zu"],
+            grammarSubtopics: ["werden + infinitive", "um…zu purpose", "ohne…zu", "Polite requests: möchte, könnte, würde"],
             vocabularyDomain: "Plans, goals, applications",
             targetNewWords: 20, skillFocus: .writing,
             productionPrompt: "Write about your future plans and why you are pursuing them.",
@@ -190,7 +190,7 @@ enum CurriculumData {
         CurriculumWeek(
             weekNumber: 21, level: .a2,
             grammarTopic: "Relative clauses (nominative and accusative)",
-            grammarSubtopics: ["Relative pronouns der/die/das", "Clause word order", "Commas"],
+            grammarSubtopics: ["Relative pronouns der/die/das", "Clause word order", "Commas", "Genitive recognition (des/der)"],
             vocabularyDomain: "Descriptions of roles, processes",
             targetNewWords: 19, skillFocus: .reading,
             productionPrompt: "Describe your role using relative clauses to add detail.",

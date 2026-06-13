@@ -259,6 +259,22 @@ enum A2Grammar {
 
             ohne…zu means 'without doing': Er ging, ohne etwas zu sagen. With separable \
             verbs, zu slides inside: anzufangen, aufzustehen.
+
+            POLITE REQUESTS — möchte, könnte, würde: These three Konjunktiv II forms are \
+            the ones tested on the Goethe A2 exam. Learn them as fixed phrases at this stage \
+            rather than as a full grammar system (that comes later at B1).
+
+            möchte (would like to): the most common polite verb at A2. Conjugates like a \
+            modal: ich möchte, Sie möchten. Use it for requests and ordering: \
+            Ich möchte einen Termin vereinbaren. Ich möchte bitte die Rechnung.
+
+            könnte (could): used for polite questions and requests. Always sounds more \
+            formal than kann. Key pattern: Könnten Sie bitte...? \
+            (Could you please...?) — this exact phrase appears in A2 writing tasks.
+
+            würde + infinitive: the polite conditional. Ich würde gerne... \
+            (I would like to...) is the most useful form. \
+            Ich würde gerne mehr Deutsch lernen. Ich würde das gerne wissen.
             """,
             examples: [
                 "Ich werde nächstes Jahr in Deutschland studieren.",
@@ -267,14 +283,19 @@ enum A2Grammar {
                 "Ich lerne Deutsch, um ein Stipendium zu bekommen.",
                 "Er ging, ohne etwas zu sagen.",
                 "Ich versuche, früh anzufangen. (zu inside the separable verb)",
-                "Ich spare Geld, damit meine Familie mich besuchen kann. (different subjects → damit)"
+                "Ich spare Geld, damit meine Familie mich besuchen kann. (different subjects → damit)",
+                "Ich möchte einen Termin vereinbaren. (möchte — polite request)",
+                "Könnten Sie bitte das Formular ausfüllen? (könnte — polite question)",
+                "Ich würde gerne mehr über den Kurs erfahren. (würde + infinitive)"
             ],
             commonMistakes: [
                 "Conjugating the infinitive after werden: ✗ Ich werde studiere",
                 "Forgetting zu in infinitive clauses: ✗ um Deutsch lernen → ✓ um Deutsch zu lernen",
                 "Using um…zu with different subjects — that needs damit",
                 "Putting zu outside separable verbs: ✗ zu anfangen → ✓ anzufangen",
-                "Overusing werden where present + time word is more natural"
+                "Overusing werden where present + time word is more natural",
+                "Using the blunt 'ich will' in formal contexts — 'ich möchte' is always more polite",
+                "Forgetting the infinitive at the end with würde: ✗ Ich würde gerne → ✓ Ich würde gerne wissen"
             ]
         ),
         21: GrammarContent(
@@ -292,6 +313,18 @@ enum A2Grammar {
 
             The relative clause sits directly after its noun whenever possible — even if \
             that splits the main sentence: Der Kollege, der neu ist, kommt aus Wien.
+
+            GENITIVE RECOGNITION (des/der): You will see the genitive case in A2 reading \
+            texts — you don't need to produce it yet, but you must not be blocked by it. \
+            The genitive expresses possession: des Mannes (the man's), der Frau (the \
+            woman's), des Kindes (the child's). Pattern: masculine/neuter nouns take DES \
+            (+ -s/-es ending on the noun); feminine and plural nouns take DER.
+
+            Two common genitive prepositions appear in A2 reading: wegen (because of) \
+            takes genitive — wegen des Wetters (because of the weather), wegen der Arbeit \
+            (because of work). trotz (despite) also takes genitive — trotz des Regens \
+            (despite the rain). You will encounter these in Lesen texts; passive recognition \
+            is the goal at this level. Full genitive production is trained at B1.
             """,
             examples: [
                 "Der Mann, der dort steht, ist mein Chef. (nominative)",
@@ -300,14 +333,20 @@ enum A2Grammar {
                 "Der Bericht, den ich schreibe, ist fast fertig. (accusative masculine: den)",
                 "Die Universität, die ich besuchen möchte, liegt in München.",
                 "Die Leute, die hier arbeiten, sind freundlich. (plural die)",
-                "Das ist der Professor, den ich gestern getroffen habe."
+                "Das ist der Professor, den ich gestern getroffen habe.",
+                "Das Büro des Direktors ist im dritten Stock. (genitive: des Direktors — recognition)",
+                "Die Meinung der Kollegin war sehr hilfreich. (genitive: der Kollegin — recognition)",
+                "Wegen des schlechten Wetters blieb er zu Hause. (wegen + genitive)",
+                "Trotz der Müdigkeit hat sie die Prüfung bestanden. (trotz + genitive)"
             ],
             commonMistakes: [
                 "Wrong pronoun gender — match the noun: die Firma, die… (not der)",
                 "Forgetting accusative masculine: ✗ der Mann, der ich kenne → ✓ den ich kenne",
                 "Keeping V2 order inside the clause: ✗ der Mann, der ist mein Chef",
                 "Missing one or both commas around the clause",
-                "Using was/wo as universal relatives like English 'that': ✗ das Buch, was ich lese"
+                "Using was/wo as universal relatives like English 'that': ✗ das Buch, was ich lese",
+                "Using von for possession everywhere: 'das Buch von dem Mann' — fine at A2, but notice 'des Mannes' in reading",
+                "Panicking when you see des/der in a reading text — recognise it as genitive and move on"
             ]
         ),
         22: GrammarContent(
