@@ -7,7 +7,6 @@ struct ExamPrepView: View {
     @Query private var profiles: [UserProfile]
 
     @State private var examVM: ExamViewModel?
-    @State private var showExam = false
     @State private var selectedLevel = "B1"
     @State private var showAPIKeyPrompt = false
 
@@ -25,10 +24,8 @@ struct ExamPrepView: View {
             .background(Color.lernBackground)
             .navigationTitle("Exam Prep")
         }
-        .fullScreenCover(isPresented: $showExam) {
-            if let examVM {
-                MockExamView(viewModel: examVM)
-            }
+        .fullScreenCover(item: $examVM) { vm in
+            MockExamView(viewModel: vm)
         }
         .alert("Add your API key", isPresented: $showAPIKeyPrompt) {
             Button("OK", role: .cancel) {}
@@ -146,9 +143,8 @@ struct ExamPrepView: View {
         guard KeychainManager.hasAPIKey else { showAPIKeyPrompt = true; return }
         let vm = ExamViewModel(profile: profile, modelContext: modelContext)
         vm.selectedLevel = selectedLevel
-        vm.isGenerating = true   // show spinner immediately on first render
+        vm.isGenerating = true
         examVM = vm
-        showExam = true
         Task { await vm.startFullMock() }
     }
 
@@ -156,9 +152,8 @@ struct ExamPrepView: View {
         guard KeychainManager.hasAPIKey else { showAPIKeyPrompt = true; return }
         let vm = ExamViewModel(profile: profile, modelContext: modelContext)
         vm.selectedLevel = selectedLevel
-        vm.isGenerating = true   // show spinner immediately on first render
+        vm.isGenerating = true
         examVM = vm
-        showExam = true
         Task { await vm.startSkillPractice(skill) }
     }
 }

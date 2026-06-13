@@ -5,7 +5,8 @@ import SwiftData
 /// Manages mock exam generation, progression, and Goethe-format scoring.
 @Observable
 @MainActor
-final class ExamViewModel {
+final class ExamViewModel: Identifiable {
+    nonisolated let id = UUID()
 
     private let anthropic = AnthropicService()
     private let modelContext: ModelContext
