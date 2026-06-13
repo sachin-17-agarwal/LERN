@@ -213,7 +213,7 @@ final class SessionViewModel: Identifiable {
     /// actor so no @Model object crosses into the nonisolated networking code.
     private func makeContext(phase: SessionPhase, history: [Message]) -> SessionContext {
         let grammar = CurriculumService.getGrammarContent(week: weekData.weekNumber)
-        let vocabulary = CurriculumService.getVocabularyList(week: weekData.weekNumber)
+        let allVocab = CurriculumService.getVocabularyList(week: weekData.weekNumber)
             .map { item -> String in
                 var entry = "\(item.german) — \(item.english)"
                 if let plural = item.plural { entry += " (pl. \(plural))" }
@@ -224,22 +224,64 @@ final class SessionViewModel: Identifiable {
             .sorted { $0.date < $1.date }
             .suffix(2)
             .map { $0.sessionNotes }
+
+        let sessionNum = profile.sessions.filter { $0.weekNumber == weekData.weekNumber }.count
+
+        // Divide grammar subtopics across the 3 sessions so each session
+        // literally only sees its portion — the AI cannot re-intro what it hasn't seen.
+        let allSubtopics = weekData.grammarSubtopics
+        let sessionSubtopics: [String]
+        switch sessionNum {
+        case 0:
+            // First session: first half of subtopics (introduce from scratch)
+            sessionSubtopics = Array(allSubtopics.prefix(max(1, (allSubtopics.count + 1) / 2)))
+        case 1:
+            // Second session: second half of subtopics (build on session 1)
+            let skip = max(1, (allSubtopics.count + 1) / 2)
+            let second = Array(allSubtopics.dropFirst(skip))
+            sessionSubtopics = second.isEmpty ? allSubtopics : second
+        default:
+            // Third session+: all subtopics combined for integration and challenge
+            sessionSubtopics = allSubtopics
+        }
+
+        // Split vocabulary: session 1 gets first half, session 2 gets second half,
+        // session 3 gets everything for consolidation.
+        let sessionVocab: [String]
+        let half = max(1, allVocab.count / 2)
+        switch sessionNum {
+        case 0:  sessionVocab = Array(allVocab.prefix(half))
+        case 1:  sessionVocab = Array(allVocab.dropFirst(half))
+        default: sessionVocab = allVocab
+        }
+
+        // Production goal scales in complexity across sessions.
+        let sessionProductionPrompt: String
+        switch sessionNum {
+        case 0:
+            sessionProductionPrompt = "Write 2–3 simple sentences using today's grammar and vocabulary. Focus on getting the structure right — don't worry about length yet."
+        case 1:
+            sessionProductionPrompt = "Write a short paragraph (4–6 sentences) using both this week's grammar subtopics. Aim to use at least 5 of this week's vocabulary words."
+        default:
+            sessionProductionPrompt = weekData.productionPrompt + " Use all of this week's grammar subtopics and at least 8 vocabulary words. Aim for exam-level quality."
+        }
+
         return SessionContext(
             weekNumber: weekData.weekNumber,
             grammarTopic: weekData.grammarTopic,
-            grammarSubtopics: weekData.grammarSubtopics,
+            grammarSubtopics: sessionSubtopics,
             grammarExplanation: grammar.explanation,
             grammarCommonMistakes: grammar.commonMistakes,
             vocabularyDomain: weekData.vocabularyDomain,
-            weekVocabulary: vocabulary,
-            productionPrompt: weekData.productionPrompt,
+            weekVocabulary: sessionVocab,
+            productionPrompt: sessionProductionPrompt,
             skillFocus: weekData.skillFocus,
             userLevel: profile.currentLevel,
             recurringErrors: ErrorAnalysis.topRecurringCategories(for: profile),
             skillScores: profile.skillScores,
             sessionPhase: phase,
             conversationHistory: history,
-            sessionNumberThisWeek: profile.sessions.filter { $0.weekNumber == weekData.weekNumber }.count,
+            sessionNumberThisWeek: sessionNum,
             previousSessionNotes: Array(priorSessions)
         )
     }
