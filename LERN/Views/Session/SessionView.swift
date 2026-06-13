@@ -33,6 +33,7 @@ struct SessionView: View {
                     Button("End") { showEndConfirmation = true }
                 }
             }
+            .interactiveDismissDisabled()
             .confirmationDialog(
                 "End this session?",
                 isPresented: $showEndConfirmation,
