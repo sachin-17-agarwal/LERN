@@ -72,14 +72,30 @@ enum SystemPromptBuilder {
             """
         }
 
+        let priorWork: String
+        if context.previousSessionNotes.isEmpty {
+            priorWork = ""
+        } else {
+            let lines = context.previousSessionNotes
+                .enumerated()
+                .map { i, note in "  • Session \(i + 1): \(note)" }
+                .joined(separator: "\n")
+            priorWork = """
+
+        PRIOR SESSIONS THIS WEEK (build forward from here — do NOT repeat content, \
+        vocabulary, or example sentences already used)
+        \(lines)
+        """
+        }
+
         let sessionFocus: String
         switch context.sessionNumberThisWeek {
         case 0:
             sessionFocus = "SESSION FOCUS: This is the student's FIRST session on this topic. Introduce the concept from scratch with clear examples. Use the warm-up to gauge prior knowledge."
         case 1:
-            sessionFocus = "SESSION FOCUS: This is the student's SECOND session on this topic. They have seen the basics. Skip the intro — move straight into practice drills. Push them to produce sentences without prompting."
+            sessionFocus = "SESSION FOCUS: This is the student's SECOND session on this topic. They have seen the basics. Skip the intro — move straight into drills with DIFFERENT examples than session 1. Target the error types noted above."
         default:
-            sessionFocus = "SESSION FOCUS: This is the student's session \(context.sessionNumberThisWeek + 1) on this topic. They know the rules. Challenge them with edge cases, common mistakes, and near-exam complexity. No re-explaining basics unless they get something wrong."
+            sessionFocus = "SESSION FOCUS: This is session \(context.sessionNumberThisWeek + 1). Challenge with edge cases, mixed structures, and near-exam complexity. Do not re-explain basics. Use only NEW examples not seen in prior sessions."
         }
 
         return """
@@ -87,6 +103,7 @@ enum SystemPromptBuilder {
         Goethe scholarship exam. The student is currently at level \(context.userLevel.badge), \
         in week \(context.weekNumber) of a 28-week plan. You have ONE 15–20 minute lesson \
         dialogue with them today — make every exchange count.
+        \(priorWork)
 
         \(sessionFocus)
 

@@ -219,6 +219,11 @@ final class SessionViewModel: Identifiable {
                 if let plural = item.plural { entry += " (pl. \(plural))" }
                 return entry
             }
+        let priorSessions = profile.sessions
+            .filter { $0.weekNumber == weekData.weekNumber && !$0.sessionNotes.isEmpty }
+            .sorted { $0.date < $1.date }
+            .suffix(2)
+            .map { $0.sessionNotes }
         return SessionContext(
             weekNumber: weekData.weekNumber,
             grammarTopic: weekData.grammarTopic,
@@ -234,7 +239,8 @@ final class SessionViewModel: Identifiable {
             skillScores: profile.skillScores,
             sessionPhase: phase,
             conversationHistory: history,
-            sessionNumberThisWeek: profile.sessions.filter { $0.weekNumber == weekData.weekNumber }.count
+            sessionNumberThisWeek: profile.sessions.filter { $0.weekNumber == weekData.weekNumber }.count,
+            previousSessionNotes: Array(priorSessions)
         )
     }
 
@@ -313,6 +319,40 @@ final class SessionViewModel: Identifiable {
         try? modelContext.save()
     }
 
+    /// Builds a compact text summary of what happened this session.
+    /// Stored on the session record and injected into the next session's prompt
+    /// so the AI knows exactly what was covered and what to build on.
+    private func buildSessionNotes(session: StudySession) -> String {
+        let sessionNum = profile.sessions.filter { $0.weekNumber == weekData.weekNumber }.count + 1
+        var parts = ["Session \(sessionNum) of week \(weekData.weekNumber)"]
+
+        if !reviewItems.isEmpty {
+            parts.append("Review: \(reviewCorrectCount)/\(reviewItems.count) correct")
+        }
+
+        let phases = completedPhases.map { $0.title }.joined(separator: " → ")
+        parts.append("Phases: \(phases)")
+
+        if let analysis = productionAnalysis {
+            let cats = analysis.errors.map { $0.category }
+            if cats.isEmpty {
+                parts.append("Production: no errors")
+            } else {
+                let unique = Array(Set(cats)).sorted().joined(separator: ", ")
+                parts.append("Production errors: \(unique)")
+            }
+            if !analysis.avoided_structures.isEmpty {
+                parts.append("Avoided: \(analysis.avoided_structures.joined(separator: ", "))")
+            }
+        } else if !productionText.isEmpty {
+            parts.append("Production: submitted (no analysis)")
+        } else {
+            parts.append("Production: skipped")
+        }
+
+        return parts.joined(separator: ". ")
+    }
+
     // MARK: - Phase transitions
 
     /// Whether the user has spent the minimum time to advance the current phase.
@@ -355,6 +395,7 @@ final class SessionViewModel: Identifiable {
             session.errorsFound = analysis.errors.count
             session.avoidedStructuresNoted = analysis.avoided_structures
         }
+        session.sessionNotes = buildSessionNotes(session: session)
         session.profile = profile
         modelContext.insert(session)
         profile.sessions.append(session)
