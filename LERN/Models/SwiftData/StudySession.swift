@@ -25,6 +25,10 @@ final class StudySession {
     var errorsFound: Int = 0
     var avoidedStructuresNoted: [String] = []     // Structures the user never attempted
 
+    /// Compact notes written at session end and fed into the next session's
+    /// system prompt so the AI knows what was already covered.
+    var sessionNotes: String = ""
+
     var profile: UserProfile?
 
     init(
