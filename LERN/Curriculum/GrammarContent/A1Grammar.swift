@@ -220,6 +220,23 @@ enum A1Grammar {
 
             Position: nicht goes at the very end when negating the whole sentence, but \
             directly BEFORE the specific word it negates (nicht heute, nicht richtig).
+
+            IMPERATIVE (du/Sie forms): The imperative gives commands and instructions — and \
+            knowing it now lets you phrase negations as commands ('Schreib das nicht!').
+
+            Du-imperative: drop 'du', keep the verb stem, add nothing (strong vowel-change \
+            verbs keep their changed vowel): schreiben → Schreib!, lesen → Lies!, kommen → \
+            Komm! No pronoun is used.
+
+            Sie-imperative: verb + Sie, inverted: Schreiben Sie!, Lesen Sie!, Kommen Sie! \
+            This is the form used in all formal exam instructions.
+
+            Exam instructions you will see constantly: Hören Sie zu! (Listen!), Schreiben Sie \
+            einen Brief (Write a letter), Antworten Sie auf die Fragen (Answer the questions), \
+            Lesen Sie den Text (Read the text).
+
+            Special forms: sein → du: Sei ruhig! / Sie: Seien Sie ruhig!; \
+            haben → du: Hab Geduld! / Sie: Haben Sie Geduld!
             """,
             examples: [
                 "Ich habe kein Auto. (I have no car.)",
@@ -228,14 +245,21 @@ enum A1Grammar {
                 "Ich arbeite heute nicht. (I'm not working today.)",
                 "Das ist nicht richtig. (That is not correct.)",
                 "Er kommt nicht aus Berlin. (nicht before the part being negated)",
-                "Ich trinke keinen Kaffee. (masculine accusative: keinen)"
+                "Ich trinke keinen Kaffee. (masculine accusative: keinen)",
+                "Schreib! / Lies! / Komm! (du-imperative: stem only)",
+                "Schreiben Sie! / Lesen Sie! / Kommen Sie! (Sie-imperative: verb + Sie)",
+                "Hören Sie zu! — Schreiben Sie einen Brief. (exam instructions)",
+                "Sei ruhig! / Seien Sie ruhig! (special form: sein)",
+                "Hab Geduld! / Haben Sie Geduld! (special form: haben)"
             ],
             commonMistakes: [
                 "Using nicht before an indefinite noun: ✗ Ich habe nicht ein Auto → ✓ kein Auto",
                 "Using kein with definite articles: ✗ Das ist kein der Chef → ✓ nicht der Chef",
                 "Wrong position of nicht — it rarely sits right after the subject",
                 "Forgetting keine for plurals and feminines",
-                "Double negation carried over from other languages: ✗ Ich habe nicht kein Auto"
+                "Double negation carried over from other languages: ✗ Ich habe nicht kein Auto",
+                "Using the du conjugation for the Sie-imperative: ✗ Schreibst du! → ✓ Schreiben Sie!",
+                "Forgetting to invert Sie: ✗ Sie schreiben! → ✓ Schreiben Sie!"
             ]
         ),
         8: GrammarContent(
