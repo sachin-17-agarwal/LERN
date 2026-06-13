@@ -183,10 +183,17 @@ final class SessionViewModel: Identifiable {
         // Seed with a hidden user "start" instruction so the model opens the
         // lesson. Kept in English: the system prompt decides the teaching
         // language, and a week-1 beginner shouldn't see German meta-talk.
-        let opener = Message(
-            role: .user,
-            content: "Begin today's lesson now. Start with the warm-up, then introduce this week's grammar topic and get me producing sentences."
-        )
+        let sessionNum = profile.sessions.filter { $0.weekNumber == weekData.weekNumber }.count
+        let openerContent: String
+        switch sessionNum {
+        case 0:
+            openerContent = "Begin today's lesson now. Start with the warm-up, then introduce this week's grammar topic and get me producing sentences."
+        case 1:
+            openerContent = "Begin today's lesson. Skip the warm-up and the intro — I've seen this topic before. Jump straight into production drills with new examples I haven't seen."
+        default:
+            openerContent = "Begin today's lesson. No warm-up, no intro — go straight to challenging edge cases, common mistakes, and near-exam complexity for this week's topic. Use examples we haven't worked through before."
+        }
+        let opener = Message(role: .user, content: openerContent)
         openerMessageID = opener.id
         messages.append(opener)
         await streamTutorReply()
