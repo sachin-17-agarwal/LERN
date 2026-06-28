@@ -247,6 +247,22 @@ enum SystemPromptBuilder {
 
         Also list any grammatical structures the student conspicuously avoided.
 
+        GRADING — assign "score": an overall writing grade from 0 to 100, calibrated to \
+        Goethe \(context.userLevel.badge) Schreiben standards where 60 is a clear pass. \
+        Weigh task fulfilment, range and correct use of this week's grammar and vocabulary, \
+        coherence, register, and grammatical accuracy. Be honest and consistent — a flawless \
+        but trivial text that dodges the task should not score highly, and a fluent text with \
+        a few minor slips can still pass comfortably.
+
+        WRITE A REPORT, not just a grade:
+        - "strengths": 2–4 short, concrete bullet phrases naming what the student did well \
+          (e.g. "Correct dative after 'mit'", "Good range of connectors"). Always find at \
+          least one genuine strength. Empty only if the text is unusable.
+        - "improvements": 2–4 short bullet phrases naming the highest-impact things to work \
+          on next, in priority order — distinct from the specific line-by-line errors below.
+        - "overall_feedback": 2–3 sentences of warm, specific coaching that ties the grade to \
+          the report: open by justifying the grade, then the single most important next step.
+
         Return ONLY valid JSON, no prose, no code fences, matching exactly this schema:
         {
           "errors": [
@@ -256,6 +272,9 @@ enum SystemPromptBuilder {
           "register_appropriate": true,
           "vocabulary_used_correctly": 0,
           "vocabulary_errors": 0,
+          "score": 0,
+          "strengths": ["string"],
+          "improvements": ["string"],
           "overall_feedback": "string",
           "suggested_srs_items": ["string"],
           "goethe_rubric": {"aufgabenerfuellung": 0, "kommunikative_gestaltung": 0, "formale_richtigkeit": 0}

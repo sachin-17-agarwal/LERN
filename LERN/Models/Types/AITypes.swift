@@ -55,6 +55,13 @@ struct ProductionAnalysis: Codable, Sendable {
         }
     }
 
+    /// Goethe Schreiben rubric, each dimension scored 0–5 by the examiner model.
+    struct GoetheRubric: Codable, Sendable {
+        let aufgabenerfuellung: Int        // task fulfilment
+        let kommunikative_gestaltung: Int  // coherence, structure, register
+        let formale_richtigkeit: Int       // grammar, spelling, punctuation
+    }
+
     let errors: [ErrorItem]
     let avoided_structures: [String]
     let register_appropriate: Bool
@@ -62,6 +69,42 @@ struct ProductionAnalysis: Codable, Sendable {
     let vocabulary_errors: Int
     let overall_feedback: String
     let suggested_srs_items: [String]
+    /// Overall writing grade 0–100, calibrated to the student's Goethe level
+    /// (60 = pass). Optional so older payloads still decode.
+    let score: Int?
+    /// Three-dimension Goethe Schreiben rubric (mainly B1). Optional.
+    let goethe_rubric: GoetheRubric?
+    /// Report — what the student did well (short bullet phrases). Optional.
+    let strengths: [String]?
+    /// Report — the most important things to work on next. Optional.
+    let improvements: [String]?
+
+    /// Non-optional accessors for rendering the report.
+    var strengthsList: [String] { strengths ?? [] }
+    var improvementsList: [String] { improvements ?? [] }
+
+    /// The grade to surface (0–100). Falls back to a heuristic from errors and
+    /// register when the model omits an explicit score.
+    var displayScore: Int {
+        if let score { return max(0, min(100, score)) }
+        let penalty = errors.count * 8 + max(0, vocabulary_errors) * 4
+        let base = register_appropriate ? 90 : 75
+        return max(25, min(100, base - penalty))
+    }
+
+    /// Whether the grade clears the Goethe 60 % pass line.
+    var passed: Bool { displayScore >= Int(Constants.Goethe.passingTotal) }
+
+    /// A short qualitative band for the grade, shown next to the number.
+    var gradeBand: String {
+        switch displayScore {
+        case 85...100: return "Excellent"
+        case 70..<85:  return "Strong"
+        case 60..<70:  return "Pass"
+        case 45..<60:  return "Almost there"
+        default:       return "Keep practising"
+        }
+    }
 }
 
 /// A single review question generated for an error record.

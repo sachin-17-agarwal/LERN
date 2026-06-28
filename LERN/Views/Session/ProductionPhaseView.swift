@@ -102,6 +102,35 @@ struct ProductionPhaseView: View {
     @ViewBuilder
     private func resultsView(_ analysis: ProductionAnalysis) -> some View {
         VStack(alignment: .leading, spacing: 16) {
+            gradeCard(analysis)
+
+            // The examiner's report — overall coaching, then what went well and
+            // what to work on next.
+            if !analysis.overall_feedback.isEmpty {
+                Text(analysis.overall_feedback.inlineMarkdown)
+                    .font(.subheadline)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .lernCard(radius: LernDesign.smallRadius)
+            }
+
+            if !analysis.strengthsList.isEmpty {
+                reportSection(
+                    title: "What went well",
+                    systemImage: "hand.thumbsup.fill",
+                    color: .lernSuccess,
+                    bullets: analysis.strengthsList
+                )
+            }
+
+            if !analysis.improvementsList.isEmpty {
+                reportSection(
+                    title: "What to work on next",
+                    systemImage: "arrow.up.forward.circle.fill",
+                    color: .lernAccent,
+                    bullets: analysis.improvementsList
+                )
+            }
+
             // Summary row
             HStack(spacing: 16) {
                 summaryStat(title: "Errors", value: "\(analysis.errors.count)", color: .lernError)
@@ -123,15 +152,8 @@ struct ProductionPhaseView: View {
                                 in: Capsule())
             }
 
-            if !analysis.overall_feedback.isEmpty {
-                Text(analysis.overall_feedback.inlineMarkdown)
-                    .font(.subheadline)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .lernCard(radius: LernDesign.smallRadius)
-            }
-
             if !analysis.errors.isEmpty {
-                Text("Errors").font(.headline)
+                Text("Line-by-line corrections").font(.headline)
                 ForEach(Array(analysis.errors.enumerated()), id: \.offset) { _, item in
                     FeedbackCard(
                         wrongText: item.wrong_text,
@@ -171,6 +193,86 @@ struct ProductionPhaseView: View {
                 .buttonStyle(.bordered)
                 .tint(.lernPrimary)
             }
+        }
+    }
+
+    /// The headline writing grade — the assessment the user asked for.
+    @ViewBuilder
+    private func gradeCard(_ analysis: ProductionAnalysis) -> some View {
+        let score = analysis.displayScore
+        let color = gradeColor(score)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Label("Writing grade", systemImage: "checkmark.seal")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text(analysis.passed ? "PASS" : "BELOW PASS")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(analysis.passed ? Color.lernSuccess : Color.lernError, in: Capsule())
+            }
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text("\(score)").font(.system(size: 44, weight: .bold, design: .rounded))
+                    .foregroundStyle(color)
+                Text("/100").font(.title3.weight(.semibold)).foregroundStyle(.secondary)
+                Spacer()
+                Text(analysis.gradeBand)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(color)
+            }
+            ProgressView(value: Double(score), total: 100).tint(color)
+
+            if let rubric = analysis.goethe_rubric {
+                Divider()
+                rubricRow("Aufgabenerfüllung", rubric.aufgabenerfuellung)
+                rubricRow("Kommunikative Gestaltung", rubric.kommunikative_gestaltung)
+                rubricRow("Formale Richtigkeit", rubric.formale_richtigkeit)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .lernCard(radius: 14)
+    }
+
+    /// A titled, colour-coded bullet list for the strengths / improvements report.
+    private func reportSection(
+        title: String, systemImage: String, color: Color, bullets: [String]
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label(title, systemImage: systemImage)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(color)
+            ForEach(Array(bullets.enumerated()), id: \.offset) { _, bullet in
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Image(systemName: "circle.fill").font(.system(size: 5)).foregroundStyle(color)
+                    Text(bullet.inlineMarkdown)
+                        .font(.footnote)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(color.opacity(0.1),
+                    in: RoundedRectangle(cornerRadius: LernDesign.smallRadius, style: .continuous))
+    }
+
+    private func rubricRow(_ title: String, _ value: Int) -> some View {
+        HStack {
+            Text(title).font(.caption).foregroundStyle(.secondary)
+            Spacer()
+            Text("\(max(0, min(5, value)))/5").font(.caption.weight(.semibold)).lernStatNumber()
+        }
+    }
+
+    private func gradeColor(_ score: Int) -> Color {
+        switch score {
+        case 75...100: return .lernSuccess
+        case 60..<75:  return .lernPrimary
+        case 45..<60:  return .lernAccent
+        default:       return .lernError
         }
     }
 

@@ -35,17 +35,32 @@ struct CurriculumService {
         return sessionsForPrevious >= Constants.Curriculum.sessionsToCompleteWeek
     }
 
-    /// Advances the profile to the next week if the current one is complete.
-    static func unlockNextWeek(for profile: UserProfile, in context: ModelContext) {
+    /// The furthest week the student may study right now — every week up to and
+    /// including this one is available to start or revisit.
+    static func highestUnlockedWeek(for profile: UserProfile) -> Int {
+        (1...Constants.Curriculum.totalWeeks).last { isWeekUnlocked(week: $0, profile: profile) }
+            ?? profile.currentWeek
+    }
+
+    /// Advances the main-track week ONLY when the student has actually completed
+    /// the current week's required sessions. Progression is completion-based, never
+    /// driven by the calendar — so an unfinished week is never silently skipped.
+    /// Revisiting an earlier week (`finishedWeek` < currentWeek) never advances.
+    static func advanceCurrentWeekIfComplete(
+        for profile: UserProfile, finishedWeek: Int, in context: ModelContext
+    ) {
+        guard finishedWeek == profile.currentWeek else { return }
         let next = profile.currentWeek + 1
         guard next <= Constants.Curriculum.totalWeeks else { return }
-        if isWeekUnlocked(week: next, profile: profile) {
-            profile.currentWeek = next
-            profile.currentLevel = week(next).level
-            seedGrammarTopicsIfNeeded(for: profile, in: context)
-            seedVocabularyIfNeeded(for: profile, in: context)
-            try? context.save()
-        }
+
+        let sessionsForCurrent = profile.sessions.filter { $0.weekNumber == profile.currentWeek }.count
+        guard sessionsForCurrent >= Constants.Curriculum.sessionsToCompleteWeek else { return }
+
+        profile.currentWeek = next
+        profile.currentLevel = week(next).level
+        seedGrammarTopicsIfNeeded(for: profile, in: context)
+        seedVocabularyIfNeeded(for: profile, in: context)
+        try? context.save()
     }
 
     // MARK: - Content delivery
