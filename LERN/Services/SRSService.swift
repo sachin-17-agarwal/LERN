@@ -140,11 +140,27 @@ struct SRSService {
         return selected.map { item in
             .genderDrill(GenderDrillItem(
                 id: UUID(),
-                noun: item.german,
+                // The stored `german` includes the article ("das Kind"); strip it
+                // so the drill shows the bare noun and doesn't give the answer away.
+                noun: Self.bareNoun(german: item.german, article: item.article!),
                 correctArticle: item.article!.lowercased(),
                 english: item.english
             ))
         }
+    }
+
+    /// Removes a leading definite article ("der/die/das") from a stored noun,
+    /// so "das Kind" becomes "Kind" for the gender drill prompt.
+    static func bareNoun(german: String, article: String) -> String {
+        let trimmed = german.trimmingCharacters(in: .whitespaces)
+        let candidates = [article, "der", "die", "das"]
+        for art in candidates {
+            let prefix = art.lowercased() + " "
+            if trimmed.lowercased().hasPrefix(prefix) {
+                return String(trimmed.dropFirst(prefix.count)).trimmingCharacters(in: .whitespaces)
+            }
+        }
+        return trimmed
     }
 
     private func makeFillInBlanks(from errors: [ErrorRecord], count: Int) -> [ReviewItem] {
