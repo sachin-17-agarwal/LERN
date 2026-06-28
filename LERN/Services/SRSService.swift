@@ -163,6 +163,18 @@ struct SRSService {
         return trimmed
     }
 
+    /// Returns the noun with its definite article shown exactly once. If `german`
+    /// already starts with der/die/das it is returned unchanged; otherwise the
+    /// `article` (when present) is prepended.
+    static func articledForm(german: String, article: String?) -> String {
+        let trimmed = german.trimmingCharacters(in: .whitespaces)
+        for art in ["der ", "die ", "das "] {
+            if trimmed.lowercased().hasPrefix(art) { return trimmed }
+        }
+        guard let article, !article.isEmpty else { return trimmed }
+        return "\(article) \(trimmed)"
+    }
+
     private func makeFillInBlanks(from errors: [ErrorRecord], count: Int) -> [ReviewItem] {
         guard count > 0 else { return [] }
         // Use error records that have a non-empty correctedText.
@@ -245,12 +257,9 @@ struct SRSService {
         var options = padded
         options.insert(item.english, at: correctIndex)
 
-        let question: String
-        if let article = item.article {
-            question = "What does '\(article) \(item.german)' mean?"
-        } else {
-            question = "What does '\(item.german)' mean?"
-        }
+        // `german` already includes the article for nouns ("die Frau"), so render
+        // the article exactly once — never "die die Frau".
+        let question = "What does '\(Self.articledForm(german: item.german, article: item.article))' mean?"
 
         return .multipleChoice(MultipleChoiceItem(
             id: UUID(),
