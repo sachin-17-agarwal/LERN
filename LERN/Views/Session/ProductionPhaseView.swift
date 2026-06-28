@@ -25,7 +25,7 @@ struct ProductionPhaseView: View {
             .animation(.spring(response: 0.45, dampingFraction: 0.85),
                        value: viewModel.productionAnalysis == nil)
         }
-        .scrollDismissesKeyboard(.interactive)
+        .scrollDismissesKeyboard(.interactively)
     }
 
     private var promptCard: some View {
