@@ -121,7 +121,7 @@ struct ExamPrepView: View {
                             Image(systemName: result.passed ? "checkmark.seal.fill" : "xmark.seal")
                                 .foregroundStyle(result.passed ? Color.lernSuccess : Color.lernError)
                             VStack(alignment: .leading) {
-                                Text("\(result.examLevel) · \(Int(result.totalScore))/100")
+                                Text(resultLabel(result))
                                     .fontWeight(.medium)
                                     .lernStatNumber()
                                 Text(result.date.shortDateString)
@@ -137,6 +137,14 @@ struct ExamPrepView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// "Reading practice · 80/100" for skill practice, "B1 · 72/100" for a full exam.
+    private func resultLabel(_ result: ExamResult) -> String {
+        if let skill = result.practicedSkill {
+            return "\(skill.displayName) practice · \(Int(result.totalScore))/100"
+        }
+        return "\(result.examLevel) · \(Int(result.totalScore))/100"
     }
 
     private func launchFullMock(profile: UserProfile) {

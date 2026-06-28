@@ -156,7 +156,7 @@ struct AnthropicService {
             messages: [userMessage],
             maxTokens: Constants.API.maxTokensProduction
         )
-        let cleaned = raw.strippingCodeFences
+        let cleaned = raw.extractingJSONObject
         guard let data = cleaned.data(using: .utf8) else {
             throw AnthropicError.decodingFailed("response was not valid UTF-8")
         }
