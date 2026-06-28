@@ -74,6 +74,14 @@ struct ProductionAnalysis: Codable, Sendable {
     let score: Int?
     /// Three-dimension Goethe Schreiben rubric (mainly B1). Optional.
     let goethe_rubric: GoetheRubric?
+    /// Report — what the student did well (short bullet phrases). Optional.
+    let strengths: [String]?
+    /// Report — the most important things to work on next. Optional.
+    let improvements: [String]?
+
+    /// Non-optional accessors for rendering the report.
+    var strengthsList: [String] { strengths ?? [] }
+    var improvementsList: [String] { improvements ?? [] }
 
     /// The grade to surface (0–100). Falls back to a heuristic from errors and
     /// register when the model omits an explicit score.

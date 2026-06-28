@@ -438,6 +438,8 @@ final class SessionViewModel: Identifiable {
         if let analysis = productionAnalysis {
             session.productionFeedback = analysis.overall_feedback
             session.productionScore = analysis.displayScore
+            session.productionStrengths = analysis.strengthsList
+            session.productionImprovements = analysis.improvementsList
             session.errorsFound = analysis.errors.count
             session.avoidedStructuresNoted = analysis.avoided_structures
         }

@@ -104,6 +104,33 @@ struct ProductionPhaseView: View {
         VStack(alignment: .leading, spacing: 16) {
             gradeCard(analysis)
 
+            // The examiner's report — overall coaching, then what went well and
+            // what to work on next.
+            if !analysis.overall_feedback.isEmpty {
+                Text(analysis.overall_feedback.inlineMarkdown)
+                    .font(.subheadline)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .lernCard(radius: LernDesign.smallRadius)
+            }
+
+            if !analysis.strengthsList.isEmpty {
+                reportSection(
+                    title: "What went well",
+                    systemImage: "hand.thumbsup.fill",
+                    color: .lernSuccess,
+                    bullets: analysis.strengthsList
+                )
+            }
+
+            if !analysis.improvementsList.isEmpty {
+                reportSection(
+                    title: "What to work on next",
+                    systemImage: "arrow.up.forward.circle.fill",
+                    color: .lernAccent,
+                    bullets: analysis.improvementsList
+                )
+            }
+
             // Summary row
             HStack(spacing: 16) {
                 summaryStat(title: "Errors", value: "\(analysis.errors.count)", color: .lernError)
@@ -125,15 +152,8 @@ struct ProductionPhaseView: View {
                                 in: Capsule())
             }
 
-            if !analysis.overall_feedback.isEmpty {
-                Text(analysis.overall_feedback.inlineMarkdown)
-                    .font(.subheadline)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .lernCard(radius: LernDesign.smallRadius)
-            }
-
             if !analysis.errors.isEmpty {
-                Text("Errors").font(.headline)
+                Text("Line-by-line corrections").font(.headline)
                 ForEach(Array(analysis.errors.enumerated()), id: \.offset) { _, item in
                     FeedbackCard(
                         wrongText: item.wrong_text,
@@ -214,6 +234,29 @@ struct ProductionPhaseView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .lernCard(radius: 14)
+    }
+
+    /// A titled, colour-coded bullet list for the strengths / improvements report.
+    private func reportSection(
+        title: String, systemImage: String, color: Color, bullets: [String]
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label(title, systemImage: systemImage)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(color)
+            ForEach(Array(bullets.enumerated()), id: \.offset) { _, bullet in
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Image(systemName: "circle.fill").font(.system(size: 5)).foregroundStyle(color)
+                    Text(bullet.inlineMarkdown)
+                        .font(.footnote)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(color.opacity(0.1),
+                    in: RoundedRectangle(cornerRadius: LernDesign.smallRadius, style: .continuous))
     }
 
     private func rubricRow(_ title: String, _ value: Int) -> some View {
