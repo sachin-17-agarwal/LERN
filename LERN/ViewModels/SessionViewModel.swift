@@ -106,10 +106,12 @@ final class SessionViewModel: Identifiable {
 
     // MARK: - Init
 
-    init(profile: UserProfile, modelContext: ModelContext) {
+    /// - Parameter targetWeek: the curriculum week to study. Defaults to the
+    ///   profile's current week; pass an earlier (unlocked) week to revisit it.
+    init(profile: UserProfile, modelContext: ModelContext, targetWeek: Int? = nil) {
         self.profile = profile
         self.modelContext = modelContext
-        self.weekData = CurriculumService.currentWeek(for: profile)
+        self.weekData = CurriculumService.week(targetWeek ?? profile.currentWeek)
         self.sessionType = Date().isWeekend ? "weekend" : "standard"
         loadReviewItems()
         startTimer()
@@ -376,6 +378,7 @@ final class SessionViewModel: Identifiable {
         parts.append("Phases: \(phases)")
 
         if let analysis = productionAnalysis {
+            parts.append("Production grade: \(analysis.displayScore)/100")
             let cats = analysis.errors.map { $0.category }
             if cats.isEmpty {
                 parts.append("Production: no errors")
@@ -434,6 +437,7 @@ final class SessionViewModel: Identifiable {
         session.productionText = productionText
         if let analysis = productionAnalysis {
             session.productionFeedback = analysis.overall_feedback
+            session.productionScore = analysis.displayScore
             session.errorsFound = analysis.errors.count
             session.avoidedStructuresNoted = analysis.avoided_structures
         }
@@ -445,7 +449,11 @@ final class SessionViewModel: Identifiable {
         updateStreakAndMinutes(addedMinutes: session.durationMinutes)
         updateSkillScores(session: session)
         try? modelContext.save()
-        CurriculumService.unlockNextWeek(for: profile, in: modelContext)
+        // Advance the main track only when THIS week's required sessions are done —
+        // never on the calendar alone, so an unfinished week is never skipped.
+        CurriculumService.advanceCurrentWeekIfComplete(
+            for: profile, finishedWeek: weekData.weekNumber, in: modelContext
+        )
     }
 
     /// Nudges skill scores based on what the session covered.
@@ -454,12 +462,6 @@ final class SessionViewModel: Identifiable {
         let reviewAccuracy: Double = reviewItems.isEmpty ? 0.5 :
             Double(reviewCorrectCount) / Double(reviewItems.count)
         let hadProduction = !session.productionText.isEmpty
-        let errorsFixed: Double
-        if let analysis = productionAnalysis, previousErrors.count > 0 {
-            errorsFixed = max(0, Double(previousErrors.count - analysis.errors.count) / Double(previousErrors.count))
-        } else {
-            errorsFixed = 0.5
-        }
 
         func clamp(_ v: Double) -> Double { min(1.0, max(0, v)) }
         let gain = 0.04    // ~4 percentage points per session (values are 0.0–1.0)
@@ -472,7 +474,11 @@ final class SessionViewModel: Identifiable {
             profile.listeningScore = clamp(profile.listeningScore + gain * reviewAccuracy)
             profile.readingScore   = clamp(profile.readingScore   + gain * 0.3)
         case .writing:
-            profile.writingScore   = clamp(profile.writingScore   + gain * (hadProduction ? (0.5 + 0.5 * errorsFixed) : 0.3))
+            // Writing is driven by the production grade below; nudge a baseline here
+            // only when nothing was submitted to grade.
+            if !hadProduction {
+                profile.writingScore = clamp(profile.writingScore + gain * 0.3)
+            }
             profile.readingScore   = clamp(profile.readingScore   + gain * 0.3)
         case .speaking:
             profile.speakingScore  = clamp(profile.speakingScore  + gain * reviewAccuracy)
@@ -481,6 +487,15 @@ final class SessionViewModel: Identifiable {
         // All sessions improve reading slightly via SRS review
         if weekData.skillFocus != .reading {
             profile.readingScore = clamp(profile.readingScore + gain * 0.2 * reviewAccuracy)
+        }
+
+        // The production grade is the real writing signal — ease the writing
+        // score toward it whenever a piece was actually graded, in any week.
+        if hadProduction, let analysis = productionAnalysis {
+            let target = Double(analysis.displayScore) / 100.0
+            let step = (target - profile.writingScore) * 0.25     // close 25% of the gap
+            let bounded = max(-gain * 2, min(gain * 2, step))      // cap movement per session
+            profile.writingScore = clamp(profile.writingScore + bounded)
         }
     }
 

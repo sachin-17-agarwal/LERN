@@ -247,6 +247,14 @@ enum SystemPromptBuilder {
 
         Also list any grammatical structures the student conspicuously avoided.
 
+        GRADING — assign "score": an overall writing grade from 0 to 100, calibrated to \
+        Goethe \(context.userLevel.badge) Schreiben standards where 60 is a clear pass. \
+        Weigh task fulfilment, range and correct use of this week's grammar and vocabulary, \
+        coherence, register, and grammatical accuracy. Be honest and consistent — a flawless \
+        but trivial text that dodges the task should not score highly, and a fluent text with \
+        a few minor slips can still pass comfortably. In "overall_feedback", open with one \
+        sentence justifying the grade, then give the single highest-impact thing to improve.
+
         Return ONLY valid JSON, no prose, no code fences, matching exactly this schema:
         {
           "errors": [
@@ -256,6 +264,7 @@ enum SystemPromptBuilder {
           "register_appropriate": true,
           "vocabulary_used_correctly": 0,
           "vocabulary_errors": 0,
+          "score": 0,
           "overall_feedback": "string",
           "suggested_srs_items": ["string"],
           "goethe_rubric": {"aufgabenerfuellung": 0, "kommunikative_gestaltung": 0, "formale_richtigkeit": 0}

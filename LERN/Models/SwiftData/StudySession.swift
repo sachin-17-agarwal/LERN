@@ -22,6 +22,7 @@ final class StudySession {
     // Production phase
     var productionText: String = ""               // What the user wrote in German
     var productionFeedback: String = ""           // AI analysis
+    var productionScore: Int = 0                  // Graded writing score 0–100 (0 = not graded)
     var errorsFound: Int = 0
     var avoidedStructuresNoted: [String] = []     // Structures the user never attempted
 
