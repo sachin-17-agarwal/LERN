@@ -20,6 +20,10 @@ final class ExamViewModel: Identifiable {
     var sections: [ExamSection] = []
     var currentSectionIndex: Int = 0
 
+    /// Non-nil when the session is single-skill practice rather than a full mock.
+    /// Drives single-module scoring so practice isn't graded as a failed exam.
+    var practiceSkill: SkillType?
+
     /// User answers keyed by question id.
     var answers: [UUID: String] = [:]
 
@@ -41,6 +45,7 @@ final class ExamViewModel: Identifiable {
         sections = []
         currentSectionIndex = 0
         answers = [:]
+        practiceSkill = nil
         defer { isGenerating = false }
 
         for skill in SkillType.allCases {
@@ -61,6 +66,7 @@ final class ExamViewModel: Identifiable {
         sections = []
         currentSectionIndex = 0
         answers = [:]
+        practiceSkill = skill
         defer { isGenerating = false }
         do {
             let section = try await anthropic.generateMockExamSection(skill: skill, level: selectedLevel)
@@ -114,34 +120,46 @@ final class ExamViewModel: Identifiable {
             }
         }
 
-        let result = ExamResult(date: Date(), examLevel: selectedLevel, isMockExam: true)
+        let result = ExamResult(date: Date(), examLevel: selectedLevel, isMockExam: practiceSkill == nil)
         result.readingScore   = normalise(perSkill[.reading]  ?? 0, in: sections, skill: .reading)
         result.listeningScore = normalise(perSkill[.listening] ?? 0, in: sections, skill: .listening)
         result.writingScore   = normalise(perSkill[.writing]  ?? 0, in: sections, skill: .writing)
         result.speakingScore  = normalise(perSkill[.speaking] ?? 0, in: sections, skill: .speaking)
 
-        // Goethe weighting: reading + listening + writing = 75 %; speaking = 25 %.
-        let writtenAvg = (result.readingScore + result.listeningScore + result.writingScore) / 3.0
-        let total = writtenAvg * 0.75 + result.speakingScore * 0.25
-        result.totalScore = total
-
-        // Pass requires every individual module ≥ 60 % AND total ≥ 60.
-        let modulesPassed = [result.readingScore, result.listeningScore,
-                             result.writingScore, result.speakingScore]
-            .allSatisfy { $0 >= Constants.Goethe.modulePassThreshold }
-        result.passed = total >= Constants.Goethe.passingTotal && modulesPassed
-
-        let weakModules = [
-            ("Lesen", result.readingScore), ("Hören", result.listeningScore),
-            ("Schreiben", result.writingScore), ("Sprechen", result.speakingScore)
-        ].filter { $0.1 < Constants.Goethe.modulePassThreshold }.map { $0.0 }
-
-        if result.passed {
-            result.feedbackNotes = "Bestanden! You met the passing threshold for \(selectedLevel)."
-        } else if !weakModules.isEmpty {
-            result.feedbackNotes = "Failed module(s): \(weakModules.joined(separator: ", ")). Each module requires ≥ 60 % to pass."
+        if let skill = practiceSkill {
+            // Single-skill practice: grade only the module that was taken — never
+            // average in 0s for modules the student didn't attempt.
+            let score = result.score(for: skill)
+            result.practicedSkillRaw = skill.rawValue
+            result.totalScore = score
+            result.passed = score >= Constants.Goethe.modulePassThreshold
+            result.feedbackNotes = result.passed
+                ? "\(skill.displayName) practice: \(Int(score))/100 — above the \(Int(Constants.Goethe.modulePassThreshold)) % module pass line."
+                : "\(skill.displayName) practice: \(Int(score))/100 — aim for \(Int(Constants.Goethe.modulePassThreshold)) % to clear this module."
         } else {
-            result.feedbackNotes = "Overall total \(Int(total))/100 — need 60 to pass. Focus on your lowest module."
+            // Full mock exam — Goethe weighting: reading + listening + writing = 75 %; speaking = 25 %.
+            let writtenAvg = (result.readingScore + result.listeningScore + result.writingScore) / 3.0
+            let total = writtenAvg * 0.75 + result.speakingScore * 0.25
+            result.totalScore = total
+
+            // Pass requires every individual module ≥ 60 % AND total ≥ 60.
+            let modulesPassed = [result.readingScore, result.listeningScore,
+                                 result.writingScore, result.speakingScore]
+                .allSatisfy { $0 >= Constants.Goethe.modulePassThreshold }
+            result.passed = total >= Constants.Goethe.passingTotal && modulesPassed
+
+            let weakModules = [
+                ("Lesen", result.readingScore), ("Hören", result.listeningScore),
+                ("Schreiben", result.writingScore), ("Sprechen", result.speakingScore)
+            ].filter { $0.1 < Constants.Goethe.modulePassThreshold }.map { $0.0 }
+
+            if result.passed {
+                result.feedbackNotes = "Bestanden! You met the passing threshold for \(selectedLevel)."
+            } else if !weakModules.isEmpty {
+                result.feedbackNotes = "Failed module(s): \(weakModules.joined(separator: ", ")). Each module requires ≥ 60 % to pass."
+            } else {
+                result.feedbackNotes = "Overall total \(Int(total))/100 — need 60 to pass. Focus on your lowest module."
+            }
         }
 
         modelContext.insert(result)

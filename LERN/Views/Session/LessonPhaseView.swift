@@ -33,6 +33,8 @@ struct LessonPhaseView: View {
             Divider()
 
             if let sentence = viewModel.practiceSentence {
+                // A speaking exercise is active — show only the mic card (with its
+                // own Skip) so it doesn't compete with the typing field.
                 LessonPracticeCard(
                     sentence: sentence,
                     onResult: { result in
@@ -41,24 +43,24 @@ struct LessonPhaseView: View {
                     onDismiss: { viewModel.dismissPractice() }
                 )
                 .padding(.horizontal)
-                .padding(.top, 8)
+                .padding(.vertical, 8)
                 .id(sentence)   // fresh recorder state per exercise
-            }
-
-            HStack(spacing: 8) {
-                GermanTextInput(
-                    placeholder: "Schreibe einen Satz…",
-                    text: $viewModel.lessonInput,
-                    onSubmit: send
-                )
-                Button(action: send) {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .font(.title)
-                        .foregroundStyle(Color.lernPrimary)
+            } else {
+                HStack(spacing: 8) {
+                    GermanTextInput(
+                        placeholder: "Schreibe einen Satz…",
+                        text: $viewModel.lessonInput,
+                        onSubmit: send
+                    )
+                    Button(action: send) {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .font(.title)
+                            .foregroundStyle(Color.lernPrimary)
+                    }
+                    .disabled(viewModel.isStreaming || viewModel.lessonInput.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
-                .disabled(viewModel.isStreaming || viewModel.lessonInput.trimmingCharacters(in: .whitespaces).isEmpty)
+                .padding()
             }
-            .padding()
         }
         .task {
             await viewModel.startLesson()

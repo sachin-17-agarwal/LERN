@@ -41,7 +41,21 @@ struct SessionContext: Sendable {
     let previousSessionNotes: [String]
 }
 
+/// Decodes an Int a model may have emitted as a number, a float, or a quoted
+/// string. Returns nil only when the key is absent or genuinely unparseable.
+private func decodeFlexibleInt<K: CodingKey>(_ c: KeyedDecodingContainer<K>, _ key: K) -> Int? {
+    if let i = try? c.decode(Int.self, forKey: key) { return i }
+    if let d = try? c.decode(Double.self, forKey: key) { return Int(d.rounded()) }
+    if let s = try? c.decode(String.self, forKey: key),
+       let i = Int(s.trimmingCharacters(in: .whitespaces)) { return i }
+    return nil
+}
+
 /// Decoded structured feedback returned by the model after Phase 3 production.
+///
+/// Decoding is deliberately lenient: model JSON is not always complete, so every
+/// field falls back to a sensible default rather than throwing. A missing or
+/// malformed field degrades that one value instead of failing the whole analysis.
 struct ProductionAnalysis: Codable, Sendable {
     struct ErrorItem: Codable, Sendable {
         let wrong_text: String
@@ -53,6 +67,18 @@ struct ProductionAnalysis: Codable, Sendable {
         var errorCategory: ErrorCategory {
             ErrorCategory(rawValue: category) ?? .vocabularyGap
         }
+
+        enum CodingKeys: String, CodingKey {
+            case wrong_text, corrected_text, category, explanation
+        }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            wrong_text     = (try? c.decode(String.self, forKey: .wrong_text)) ?? ""
+            corrected_text = (try? c.decode(String.self, forKey: .corrected_text)) ?? ""
+            category       = (try? c.decode(String.self, forKey: .category)) ?? ""
+            explanation    = (try? c.decode(String.self, forKey: .explanation)) ?? ""
+        }
     }
 
     /// Goethe Schreiben rubric, each dimension scored 0–5 by the examiner model.
@@ -60,6 +86,17 @@ struct ProductionAnalysis: Codable, Sendable {
         let aufgabenerfuellung: Int        // task fulfilment
         let kommunikative_gestaltung: Int  // coherence, structure, register
         let formale_richtigkeit: Int       // grammar, spelling, punctuation
+
+        enum CodingKeys: String, CodingKey {
+            case aufgabenerfuellung, kommunikative_gestaltung, formale_richtigkeit
+        }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            aufgabenerfuellung       = decodeFlexibleInt(c, .aufgabenerfuellung) ?? 0
+            kommunikative_gestaltung = decodeFlexibleInt(c, .kommunikative_gestaltung) ?? 0
+            formale_richtigkeit      = decodeFlexibleInt(c, .formale_richtigkeit) ?? 0
+        }
     }
 
     let errors: [ErrorItem]
@@ -82,6 +119,27 @@ struct ProductionAnalysis: Codable, Sendable {
     /// Non-optional accessors for rendering the report.
     var strengthsList: [String] { strengths ?? [] }
     var improvementsList: [String] { improvements ?? [] }
+
+    enum CodingKeys: String, CodingKey {
+        case errors, avoided_structures, register_appropriate, vocabulary_used_correctly,
+             vocabulary_errors, overall_feedback, suggested_srs_items,
+             score, goethe_rubric, strengths, improvements
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        errors                    = (try? c.decode([ErrorItem].self, forKey: .errors)) ?? []
+        avoided_structures        = (try? c.decode([String].self, forKey: .avoided_structures)) ?? []
+        register_appropriate      = (try? c.decode(Bool.self, forKey: .register_appropriate)) ?? true
+        vocabulary_used_correctly = decodeFlexibleInt(c, .vocabulary_used_correctly) ?? 0
+        vocabulary_errors         = decodeFlexibleInt(c, .vocabulary_errors) ?? 0
+        overall_feedback          = (try? c.decode(String.self, forKey: .overall_feedback)) ?? ""
+        suggested_srs_items       = (try? c.decode([String].self, forKey: .suggested_srs_items)) ?? []
+        score                     = decodeFlexibleInt(c, .score)
+        goethe_rubric             = try? c.decode(GoetheRubric.self, forKey: .goethe_rubric)
+        strengths                 = try? c.decode([String].self, forKey: .strengths)
+        improvements              = try? c.decode([String].self, forKey: .improvements)
+    }
 
     /// The grade to surface (0–100). Falls back to a heuristic from errors and
     /// register when the model omits an explicit score.

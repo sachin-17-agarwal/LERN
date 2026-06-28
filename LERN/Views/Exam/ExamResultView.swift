@@ -16,7 +16,7 @@ struct ExamResultView: View {
                     Text(result.passed ? "Bestanden!" : "Noch nicht bestanden")
                         .font(.title2.weight(.bold))
                         .fontDesign(.rounded)
-                    Text("\(result.examLevel) · \(Int(result.totalScore))/100")
+                    Text(subtitle)
                         .font(.headline)
                         .lernStatNumber()
                         .foregroundStyle(.secondary)
@@ -24,12 +24,17 @@ struct ExamResultView: View {
                 .frame(maxWidth: .infinity)
                 .lernCard()
 
-                // Per-skill breakdown
+                // Per-skill breakdown — only the practised module for skill
+                // practice, all four for a full exam.
                 VStack(spacing: 12) {
-                    skillRow(.reading, result.readingScore)
-                    skillRow(.listening, result.listeningScore)
-                    skillRow(.writing, result.writingScore)
-                    skillRow(.speaking, result.speakingScore)
+                    if let skill = result.practicedSkill {
+                        skillRow(skill, result.score(for: skill))
+                    } else {
+                        skillRow(.reading, result.readingScore)
+                        skillRow(.listening, result.listeningScore)
+                        skillRow(.writing, result.writingScore)
+                        skillRow(.speaking, result.speakingScore)
+                    }
                 }
                 .lernCard()
 
@@ -42,9 +47,15 @@ struct ExamResultView: View {
 
                 // Pass criteria reminder
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Goethe \(result.examLevel) pass criteria").font(.caption.weight(.semibold))
-                    Text("Pass = 60/100 · min 45 written · min 15 oral")
-                        .font(.caption2).foregroundStyle(.secondary)
+                    if result.isSkillPractice {
+                        Text("Module pass criteria").font(.caption.weight(.semibold))
+                        Text("A module passes at 60/100.")
+                            .font(.caption2).foregroundStyle(.secondary)
+                    } else {
+                        Text("Goethe \(result.examLevel) pass criteria").font(.caption.weight(.semibold))
+                        Text("Pass = 60/100 · min 45 written · min 15 oral")
+                            .font(.caption2).foregroundStyle(.secondary)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding()
@@ -53,6 +64,14 @@ struct ExamResultView: View {
         }
         .navigationTitle("Result")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    /// "Reading practice · 80/100" for skill practice, "B1 · 72/100" for a full exam.
+    private var subtitle: String {
+        if let skill = result.practicedSkill {
+            return "\(skill.displayName) practice · \(Int(result.totalScore))/100"
+        }
+        return "\(result.examLevel) · \(Int(result.totalScore))/100"
     }
 
     private func skillRow(_ skill: SkillType, _ score: Double) -> some View {
