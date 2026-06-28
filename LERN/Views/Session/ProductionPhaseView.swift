@@ -3,6 +3,9 @@ import SwiftUI
 /// Phase 3 — free writing with structured AI analysis.
 struct ProductionPhaseView: View {
     @Bindable var viewModel: SessionViewModel
+    @FocusState private var editorFocused: Bool
+
+    private let specials = ["ä", "ö", "ü", "ß", "Ä", "Ö", "Ü"]
 
     var body: some View {
         ScrollView {
@@ -22,6 +25,7 @@ struct ProductionPhaseView: View {
             .animation(.spring(response: 0.45, dampingFraction: 0.85),
                        value: viewModel.productionAnalysis == nil)
         }
+        .scrollDismissesKeyboard(.interactively)
     }
 
     private var promptCard: some View {
@@ -69,12 +73,30 @@ struct ProductionPhaseView: View {
                 .scrollContentBackground(.hidden)
                 .background(Color.lernSurface,
                             in: RoundedRectangle(cornerRadius: LernDesign.smallRadius, style: .continuous))
+                .focused($editorFocused)
                 .overlay(alignment: .topLeading) {
                     if viewModel.productionText.isEmpty {
                         Text("Schreibe deinen Text hier auf Deutsch…")
                             .foregroundStyle(.secondary)
                             .padding(16)
                             .allowsHitTesting(false)
+                    }
+                }
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        ForEach(specials, id: \.self) { ch in
+                            Button(ch) { viewModel.productionText.append(ch) }
+                                .font(.headline)
+                                .foregroundStyle(Color.lernPrimary)
+                        }
+                        Spacer()
+                        Button {
+                            editorFocused = false
+                        } label: {
+                            Image(systemName: "keyboard.chevron.compact.down")
+                                .font(.title3)
+                        }
+                        .accessibilityLabel("Dismiss keyboard")
                     }
                 }
 

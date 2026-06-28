@@ -414,6 +414,17 @@ final class SessionViewModel: Identifiable {
         }
     }
 
+    /// Returns to the previous phase. Conversation, review progress, and any
+    /// production analysis are all retained, so stepping back (e.g. after an
+    /// accidental tap on "Continue") loses nothing.
+    func goToPreviousPhase() {
+        if let previous = currentPhase.previous {
+            currentPhase = previous
+        }
+    }
+
+    var canGoBackPhase: Bool { currentPhase.previous != nil }
+
     // MARK: - Finishing
 
     /// Persists the completed (or partial) session and updates streak/minutes.
