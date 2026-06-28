@@ -57,7 +57,20 @@ struct SessionView: View {
     }
 
     private var bottomBar: some View {
-        HStack {
+        HStack(spacing: 10) {
+            if viewModel.canGoBackPhase {
+                Button {
+                    viewModel.goToPreviousPhase()
+                } label: {
+                    Label("Back", systemImage: "chevron.left")
+                        .labelStyle(.iconOnly)
+                        .frame(minWidth: 44, minHeight: 30)
+                }
+                .buttonStyle(.bordered)
+                .tint(.lernPrimary)
+                .accessibilityLabel("Back to \(viewModel.currentPhase.previous?.title ?? "")")
+            }
+
             if viewModel.currentPhase == .production {
                 Button {
                     finish()

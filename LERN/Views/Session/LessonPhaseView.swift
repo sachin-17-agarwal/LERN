@@ -22,6 +22,7 @@ struct LessonPhaseView: View {
                     }
                     .padding()
                 }
+                .scrollDismissesKeyboard(.interactive)
                 .onChange(of: viewModel.messages.count) {
                     if let last = viewModel.messages.last {
                         withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
