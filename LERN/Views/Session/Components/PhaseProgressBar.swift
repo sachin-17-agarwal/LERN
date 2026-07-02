@@ -11,7 +11,7 @@ struct PhaseProgressBar: View {
             HStack(spacing: 8) {
                 ForEach(SessionPhase.allCases) { phase in
                     VStack(spacing: 4) {
-                        RoundedRectangle(cornerRadius: 3)
+                        Capsule()
                             .fill(color(for: phase))
                             .frame(height: 6)
                         Text(phase.title)
@@ -23,6 +23,7 @@ struct PhaseProgressBar: View {
             HStack {
                 Image(systemName: "clock")
                 Text(elapsed)
+                    .lernStatNumber()
                 Spacer()
                 Text(currentPhase.title)
                     .fontWeight(.semibold)
@@ -30,6 +31,7 @@ struct PhaseProgressBar: View {
             .font(.caption)
             .foregroundStyle(.secondary)
         }
+        .animation(.spring(response: 0.4, dampingFraction: 0.85), value: currentPhase)
     }
 
     private func color(for phase: SessionPhase) -> Color {

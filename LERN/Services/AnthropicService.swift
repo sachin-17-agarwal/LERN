@@ -37,6 +37,7 @@ struct AnthropicService {
     // MARK: - Request building
 
     private func makeRequest(
+        model: String,
         system: String,
         messages: [Message],
         stream: Bool,
@@ -56,7 +57,7 @@ struct AnthropicService {
         request.setValue("application/json", forHTTPHeaderField: "content-type")
 
         let body: [String: Any] = [
-            "model": Constants.API.model,
+            "model": model,
             "max_tokens": maxTokens,
             "stream": stream,
             "system": system,
@@ -76,7 +77,7 @@ struct AnthropicService {
         return AsyncThrowingStream { continuation in
             let task = Task {
                 do {
-                    let request = try makeRequest(system: system, messages: messages, stream: true)
+                    let request = try makeRequest(model: Constants.API.dialogueModel, system: system, messages: messages, stream: true)
                     let (bytes, response) = try await session.bytes(for: request)
 
                     guard let http = response as? HTTPURLResponse else {
@@ -113,11 +114,12 @@ struct AnthropicService {
 
     /// Sends a single request and returns the full assembled text.
     func complete(
+        model: String = Constants.API.dialogueModel,
         system: String,
         messages: [Message],
         maxTokens: Int = Constants.API.maxTokens
     ) async throws -> String {
-        let request = try makeRequest(system: system, messages: messages, stream: false, maxTokens: maxTokens)
+        let request = try makeRequest(model: model, system: system, messages: messages, stream: false, maxTokens: maxTokens)
         let (data, response) = try await session.data(for: request)
 
         guard let http = response as? HTTPURLResponse else {
@@ -149,11 +151,12 @@ struct AnthropicService {
         let userMessage = Message(role: .user, content: germanText)
 
         let raw = try await complete(
+            model: Constants.API.analysisModel,
             system: system,
             messages: [userMessage],
             maxTokens: Constants.API.maxTokensProduction
         )
-        let cleaned = raw.strippingCodeFences
+        let cleaned = raw.extractingJSONObject
         guard let data = cleaned.data(using: .utf8) else {
             throw AnthropicError.decodingFailed("response was not valid UTF-8")
         }
@@ -200,17 +203,19 @@ struct AnthropicService {
     // MARK: - Mock exam section generation
 
     func generateMockExamSection(skill: SkillType, level: String) async throws -> ExamSection {
+        let formatGuide = mockExamFormatGuide(skill: skill, level: level)
         let system = """
-        You are an examiner generating a Goethe \(level) \(skill.germanName) section in \
-        authentic Goethe format and difficulty. Use professional/academic German register. \
-        Return ONLY JSON matching this schema:
+        You are a Goethe-Institut examiner generating an authentic \(level) mock exam section. \
+        Use professional/academic German register. Match exact Goethe format and difficulty. \
+        \(formatGuide)
+        Return ONLY valid JSON matching this schema (no prose, no code fences):
         {"skill":"\(skill.rawValue)","instructions":"...","passage":"... or null",
          "questions":[{"prompt":"...","options":["...","..."] or null,"correctAnswer":"... or null"}],
          "maxPoints": <number>}
-        For writing and speaking, set correctAnswer to null (they are AI-graded).
+        For Schreiben and Sprechen set correctAnswer to null — they are rubric-graded separately.
         """
         let userMessage = Message(role: .user, content: "Generate the \(skill.germanName) section now.")
-        let raw = try await complete(system: system, messages: [userMessage], maxTokens: Constants.API.maxTokensProduction)
+        let raw = try await complete(model: Constants.API.analysisModel, system: system, messages: [userMessage], maxTokens: Constants.API.maxTokensProduction)
         let cleaned = raw.strippingCodeFences
         guard let data = cleaned.data(using: .utf8) else {
             throw AnthropicError.decodingFailed("exam section was not valid UTF-8")
@@ -219,6 +224,83 @@ struct AnthropicService {
             return try JSONDecoder().decode(ExamSection.self, from: data)
         } catch {
             throw AnthropicError.decodingFailed(error.localizedDescription)
+        }
+    }
+
+    /// Returns a detailed format specification for a given skill/level combination,
+    /// so the model generates tasks that match the real Goethe exam structure.
+    private func mockExamFormatGuide(skill: SkillType, level: String) -> String {
+        switch (skill, level) {
+        case (.reading, "B1"):
+            return """
+            GOETHE B1 LESEN FORMAT (5 Teile, 45 min):
+            Generate Teil 2: provide a 300-word authentic-style article on a professional/social \
+            topic (e.g. remote work, volunteering, language learning) followed by 6 multiple-choice \
+            questions each with 3 options (a/b/c). One correct answer per question. maxPoints: 15.
+            """
+        case (.listening, "B1"):
+            return """
+            GOETHE B1 HÖREN FORMAT (4 Teile, ~40 min):
+            Generate Teil 2: write a 250-word AUTHENTIC two-speaker radio interview \
+            on a professional or social topic (e.g. remote work, volunteering, lifelong \
+            learning). The interview must feel natural: include brief hesitations ("also…", \
+            "ähm…", "ja genau"), one speaker self-correcting, and natural overlaps marked \
+            as "(beide lachen)" or "(Moderatorin unterbricht)". Use B1 vocabulary and \
+            sentence complexity — not simplified. Then generate 6 statements to mark \
+            richtig (R) or falsch (F); at least 3 should test INFERENCE (paraphrase of \
+            meaning), not verbatim lifting from the text. \
+            Set options to ["richtig","falsch"] and correctAnswer to "richtig" or "falsch". \
+            maxPoints: 15. The passage field contains the interview — the app plays it via TTS.
+            """
+        case (.writing, "B1"):
+            return """
+            GOETHE B1 SCHREIBEN FORMAT (2 Teile, 60 min):
+            Teil 1: Write a task prompt asking the student to write a semi-formal email (~100 words) \
+            to a colleague, addressing exactly 3 specific bullet points you provide. \
+            Teil 2: Write a task prompt asking the student to write a Forumsbeitrag (~150 words) \
+            arguing their position on a concrete social topic (e.g. social media use, remote work, \
+            learning languages). Provide the forum context and a question to respond to.
+            Generate 2 questions (one per Teil), both with null correctAnswer. maxPoints: 60.
+            Assessment uses 3 criteria: Aufgabenerfüllung (did they address all points?), \
+            kommunikative Gestaltung (coherence, register, flow), formale Richtigkeit (grammar, spelling).
+            """
+        case (.speaking, "B1"):
+            return """
+            GOETHE B1 SPRECHEN FORMAT (3 Teile, ~15 min):
+            Generate Teil 2 (Thema präsentieren): provide a prompt card topic with 4–5 visual \
+            cue words/phrases (like a real Goethe impulse card) on a concrete topic \
+            (e.g. Vorteile und Nachteile von Social Media; Leben in der Stadt oder auf dem Land). \
+            Instruct the student to give a 2-minute presentation with structure: \
+            Einleitung → Hauptteil (Vor- und Nachteile/Argumente) → Beispiel → Fazit.
+            Then generate 1 follow-up question the examiner would ask. maxPoints: 25. \
+            Set correctAnswer to null for all questions.
+            """
+        case (.reading, "A2"):
+            return """
+            GOETHE A2 LESEN FORMAT: provide a short text (150–200 words) on an everyday topic, \
+            followed by 5 multiple-choice questions with 3 options each. maxPoints: 10.
+            """
+        case (.listening, "A2"):
+            return """
+            GOETHE A2 HÖREN FORMAT: write a 150-word TWO-SPEAKER dialogue (everyday \
+            situation: phone call, shop, appointment). Include natural hesitations \
+            ("ähm", "also"), one clarification request ("Wie bitte?"), and at least one \
+            self-correction. Then 5 richtig/falsch questions — at least 2 testing inference. \
+            options: ["richtig","falsch"]. maxPoints: 10.
+            """
+        case (.writing, "A2"):
+            return """
+            GOETHE A2 SCHREIBEN FORMAT: provide a prompt to write a short semi-formal email \
+            (~80 words) responding to an invitation or inquiry, addressing 3 bullet points. maxPoints: 20.
+            """
+        case (.speaking, "A2"):
+            return """
+            GOETHE A2 SPRECHEN FORMAT: provide a planning task — student suggests and responds \
+            about a joint activity (e.g. planning a birthday party). Give a scenario and \
+            3 sub-prompts. maxPoints: 10.
+            """
+        default:
+            return "Generate an authentic \(level) \(skill.germanName) task at appropriate difficulty."
         }
     }
 }

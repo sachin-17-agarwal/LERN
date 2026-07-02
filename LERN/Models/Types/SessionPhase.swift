@@ -41,4 +41,12 @@ enum SessionPhase: String, Codable, CaseIterable, Identifiable {
         case .production: return nil
         }
     }
+
+    var previous: SessionPhase? {
+        switch self {
+        case .review:     return nil
+        case .lesson:     return .review
+        case .production: return .lesson
+        }
+    }
 }

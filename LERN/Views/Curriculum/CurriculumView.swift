@@ -36,8 +36,10 @@ struct CurriculumView: View {
         VStack(spacing: 12) {
             // Progress header
             VStack(alignment: .leading, spacing: 6) {
-                Text(vm.progressText).font(.headline)
-                ProgressView(value: vm.progressFraction).tint(.lernPrimary)
+                Text(vm.progressText).font(.headline).fontDesign(.rounded)
+                ProgressView(value: vm.progressFraction)
+                    .tint(.lernPrimary)
+                    .animation(.easeOut(duration: 0.6), value: vm.progressFraction)
             }
             .padding(.horizontal)
             .padding(.top, 8)
@@ -51,7 +53,7 @@ struct CurriculumView: View {
                         } label: {
                             WeekCell(week: week, state: state)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.lernPressable)
                         .disabled(state == .locked)
                     }
                 }

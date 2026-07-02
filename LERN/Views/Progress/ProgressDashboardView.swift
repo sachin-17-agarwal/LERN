@@ -38,16 +38,15 @@ struct ProgressDashboardView: View {
                     }
                 }
             }
-            .padding()
-            .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 16))
+            .lernCard()
 
             // Trajectory
             VStack(alignment: .leading, spacing: 12) {
                 Text("Trajectory to December").font(.headline)
                 TrajectoryChart(points: vm.trajectory())
             }
-            .padding()
-            .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 16))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .lernCard()
 
             // Exam recommendation
             ExamReadinessCard(recommendation: vm.examRecommendation())
@@ -66,8 +65,13 @@ struct ProgressDashboardView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Error Patterns").font(.headline)
             if counts.isEmpty {
-                Text("No errors recorded yet. Complete a production phase to see your patterns.")
-                    .font(.footnote).foregroundStyle(.secondary)
+                HStack(spacing: 10) {
+                    Image(systemName: "sparkles")
+                        .foregroundStyle(Color.lernSuccess)
+                    Text("No errors recorded yet. Complete a production phase to see your patterns.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 8)
             } else {
                 Chart(counts, id: \.category) { item in
                     BarMark(
@@ -79,8 +83,7 @@ struct ProgressDashboardView: View {
                 .frame(height: CGFloat(counts.count) * 36 + 20)
             }
         }
-        .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 16))
+        .lernCard()
     }
 }

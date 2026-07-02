@@ -2,10 +2,18 @@ import Foundation
 import SwiftUI
 import SwiftData
 
+/// The five root tabs, used so any view can deep-link to another tab.
+enum AppTab: Hashable {
+    case home, curriculum, progress, exam, settings
+}
+
 /// Global observable application state shared through the environment.
 @Observable
 @MainActor
 final class AppState {
+
+    /// The currently selected root tab.
+    var selectedTab: AppTab = .home
 
     /// Whether a valid API key is present in the Keychain.
     var hasAPIKey: Bool = KeychainManager.hasAPIKey

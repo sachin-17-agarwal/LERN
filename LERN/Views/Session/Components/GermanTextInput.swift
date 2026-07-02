@@ -14,30 +14,36 @@ struct GermanTextInput: View {
     private let specials = ["ä", "ö", "ü", "ß", "Ä", "Ö", "Ü"]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                TextField(placeholder, text: $text, axis: .vertical)
-                    .textInputAutocapitalization(.sentences)
-                    .autocorrectionDisabled(false)
-                    .focused($focused)
-                    .lineLimit(1...4)
-                    .onSubmit { onSubmit?() }
-            }
-            .padding(12)
-            .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 12))
-
-            if showSpecialCharacters && focused {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
-                        ForEach(specials, id: \.self) { ch in
-                            Button(ch) { text.append(ch) }
-                                .font(.headline)
-                                .frame(width: 40, height: 36)
-                                .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 8))
-                                .foregroundStyle(Color.lernPrimary)
-                        }
+        HStack(spacing: 8) {
+            TextField(placeholder, text: $text, axis: .vertical)
+                .textInputAutocapitalization(.sentences)
+                .autocorrectionDisabled(false)
+                .focused($focused)
+                .lineLimit(1...4)
+                .onSubmit { onSubmit?() }
+        }
+        .padding(12)
+        .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 12))
+        // Umlauts and a keyboard-dismiss control live in the accessory bar above
+        // the keyboard, so they don't eat the on-screen content and the keyboard
+        // can always be closed with the chevron.
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                if showSpecialCharacters {
+                    ForEach(specials, id: \.self) { ch in
+                        Button(ch) { text.append(ch) }
+                            .font(.headline)
+                            .foregroundStyle(Color.lernPrimary)
                     }
                 }
+                Spacer()
+                Button {
+                    focused = false
+                } label: {
+                    Image(systemName: "keyboard.chevron.compact.down")
+                        .font(.title3)
+                }
+                .accessibilityLabel("Dismiss keyboard")
             }
         }
     }

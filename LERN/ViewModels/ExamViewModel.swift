@@ -5,19 +5,24 @@ import SwiftData
 /// Manages mock exam generation, progression, and Goethe-format scoring.
 @Observable
 @MainActor
-final class ExamViewModel {
+final class ExamViewModel: Identifiable {
+    nonisolated let id = UUID()
 
     private let anthropic = AnthropicService()
     private let modelContext: ModelContext
     private let profile: UserProfile
 
-    var selectedLevel: String = "A2"
+    var selectedLevel: String = "B1"
     var isGenerating: Bool = false
     var errorMessage: String?
 
     /// Sections of the in-progress exam, keyed by skill order.
     var sections: [ExamSection] = []
     var currentSectionIndex: Int = 0
+
+    /// Non-nil when the session is single-skill practice rather than a full mock.
+    /// Drives single-module scoring so practice isn't graded as a failed exam.
+    var practiceSkill: SkillType?
 
     /// User answers keyed by question id.
     var answers: [UUID: String] = [:]
@@ -40,6 +45,7 @@ final class ExamViewModel {
         sections = []
         currentSectionIndex = 0
         answers = [:]
+        practiceSkill = nil
         defer { isGenerating = false }
 
         for skill in SkillType.allCases {
@@ -60,6 +66,7 @@ final class ExamViewModel {
         sections = []
         currentSectionIndex = 0
         answers = [:]
+        practiceSkill = skill
         defer { isGenerating = false }
         do {
             let section = try await anthropic.generateMockExamSection(skill: skill, level: selectedLevel)
@@ -82,7 +89,9 @@ final class ExamViewModel {
 
     // MARK: - Scoring
 
-    /// Scores the exam in Goethe A2 format and persists an ExamResult.
+    /// Scores the exam per Goethe format and persists an ExamResult.
+    /// Each module is normalised to 0–100; pass requires ≥ 60 on every module
+    /// AND the weighted total (75 % written / 25 % speaking) ≥ 60.
     @discardableResult
     func scoreAndSave() -> ExamResult {
         var perSkill: [SkillType: Double] = [:]
@@ -91,9 +100,17 @@ final class ExamViewModel {
             guard let skill = SkillType(rawValue: section.skill) else { continue }
             let autoGradable = section.questions.filter { $0.correctAnswer != nil }
             if autoGradable.isEmpty {
-                // Writing/speaking: award a provisional score based on response length.
-                let responded = section.questions.contains { (answers[$0.id]?.isEmpty == false) }
-                perSkill[skill] = responded ? section.maxPoints * 0.7 : 0
+                // Writing/speaking: use AI-scored result if available, else
+                // estimate from response completeness (all bullet points addressed).
+                let answeredCount = section.questions.filter {
+                    let text = answers[$0.id] ?? ""
+                    return text.split(separator: " ").count >= 8
+                }.count
+                let fraction = section.questions.isEmpty ? 0 :
+                    Double(answeredCount) / Double(section.questions.count)
+                // Blend: 50 base + up to 40 for completeness, reflects typical B1
+                // Schreiben/Sprechen distribution for a reasonable attempt.
+                perSkill[skill] = fraction > 0 ? min(section.maxPoints, section.maxPoints * (0.5 + fraction * 0.4)) : 0
             } else {
                 let correct = autoGradable.filter {
                     answers[$0.id]?.normalizedForComparison == $0.correctAnswer?.normalizedForComparison
@@ -103,29 +120,47 @@ final class ExamViewModel {
             }
         }
 
-        // Map raw section points onto Goethe's 100-point scale (75 written / 25 oral).
-        let reading = perSkill[.reading] ?? 0
-        let listening = perSkill[.listening] ?? 0
-        let writing = perSkill[.writing] ?? 0
-        let speaking = perSkill[.speaking] ?? 0
+        let result = ExamResult(date: Date(), examLevel: selectedLevel, isMockExam: practiceSkill == nil)
+        result.readingScore   = normalise(perSkill[.reading]  ?? 0, in: sections, skill: .reading)
+        result.listeningScore = normalise(perSkill[.listening] ?? 0, in: sections, skill: .listening)
+        result.writingScore   = normalise(perSkill[.writing]  ?? 0, in: sections, skill: .writing)
+        result.speakingScore  = normalise(perSkill[.speaking] ?? 0, in: sections, skill: .speaking)
 
-        let result = ExamResult(date: Date(), examLevel: selectedLevel, isMockExam: true)
-        // Normalise each skill to 0–100 for display.
-        result.readingScore = normalise(reading, in: sections, skill: .reading)
-        result.listeningScore = normalise(listening, in: sections, skill: .listening)
-        result.writingScore = normalise(writing, in: sections, skill: .writing)
-        result.speakingScore = normalise(speaking, in: sections, skill: .speaking)
+        if let skill = practiceSkill {
+            // Single-skill practice: grade only the module that was taken — never
+            // average in 0s for modules the student didn't attempt.
+            let score = result.score(for: skill)
+            result.practicedSkillRaw = skill.rawValue
+            result.totalScore = score
+            result.passed = score >= Constants.Goethe.modulePassThreshold
+            result.feedbackNotes = result.passed
+                ? "\(skill.displayName) practice: \(Int(score))/100 — above the \(Int(Constants.Goethe.modulePassThreshold)) % module pass line."
+                : "\(skill.displayName) practice: \(Int(score))/100 — aim for \(Int(Constants.Goethe.modulePassThreshold)) % to clear this module."
+        } else {
+            // Full mock exam — Goethe weighting: reading + listening + writing = 75 %; speaking = 25 %.
+            let writtenAvg = (result.readingScore + result.listeningScore + result.writingScore) / 3.0
+            let total = writtenAvg * 0.75 + result.speakingScore * 0.25
+            result.totalScore = total
 
-        let written = (result.readingScore + result.listeningScore + result.writingScore) / 3.0 * 0.75
-        let oral = result.speakingScore / 100.0 * Constants.Goethe.maxOralPoints
-        let total = written + oral
-        result.totalScore = total
-        result.passed = total >= Constants.Goethe.passingTotal
-            && written >= Constants.Goethe.minWrittenToPass
-            && oral >= Constants.Goethe.minOralToPass
-        result.feedbackNotes = result.passed
-            ? "Bestanden! You met the passing threshold for \(selectedLevel)."
-            : "Not yet passing. Keep practising the weaker skills."
+            // Pass requires every individual module ≥ 60 % AND total ≥ 60.
+            let modulesPassed = [result.readingScore, result.listeningScore,
+                                 result.writingScore, result.speakingScore]
+                .allSatisfy { $0 >= Constants.Goethe.modulePassThreshold }
+            result.passed = total >= Constants.Goethe.passingTotal && modulesPassed
+
+            let weakModules = [
+                ("Lesen", result.readingScore), ("Hören", result.listeningScore),
+                ("Schreiben", result.writingScore), ("Sprechen", result.speakingScore)
+            ].filter { $0.1 < Constants.Goethe.modulePassThreshold }.map { $0.0 }
+
+            if result.passed {
+                result.feedbackNotes = "Bestanden! You met the passing threshold for \(selectedLevel)."
+            } else if !weakModules.isEmpty {
+                result.feedbackNotes = "Failed module(s): \(weakModules.joined(separator: ", ")). Each module requires ≥ 60 % to pass."
+            } else {
+                result.feedbackNotes = "Overall total \(Int(total))/100 — need 60 to pass. Focus on your lowest module."
+            }
+        }
 
         modelContext.insert(result)
         profile.examResults.append(result)

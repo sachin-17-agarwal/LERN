@@ -21,9 +21,16 @@ final class StudySession {
 
     // Production phase
     var productionText: String = ""               // What the user wrote in German
-    var productionFeedback: String = ""           // AI analysis
+    var productionFeedback: String = ""           // AI analysis (overall coaching paragraph)
+    var productionScore: Int = 0                  // Graded writing score 0–100 (0 = not graded)
+    var productionStrengths: [String] = []        // Report: what the writing did well
+    var productionImprovements: [String] = []     // Report: what to work on next
     var errorsFound: Int = 0
     var avoidedStructuresNoted: [String] = []     // Structures the user never attempted
+
+    /// Compact notes written at session end and fed into the next session's
+    /// system prompt so the AI knows what was already covered.
+    var sessionNotes: String = ""
 
     var profile: UserProfile?
 

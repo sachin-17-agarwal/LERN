@@ -40,10 +40,9 @@ struct WeekCell: View {
                 Image(systemName: "chevron.right").foregroundStyle(.tertiary)
             }
         }
-        .padding(14)
-        .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 14))
+        .lernCard(padding: 14, radius: 14)
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(state == .current ? Color.lernPrimary : .clear, lineWidth: 2)
         )
         .opacity(state == .locked ? 0.55 : 1)

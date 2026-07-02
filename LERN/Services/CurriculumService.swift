@@ -35,16 +35,32 @@ struct CurriculumService {
         return sessionsForPrevious >= Constants.Curriculum.sessionsToCompleteWeek
     }
 
-    /// Advances the profile to the next week if the current one is complete.
-    static func unlockNextWeek(for profile: UserProfile, in context: ModelContext) {
+    /// The furthest week the student may study right now — every week up to and
+    /// including this one is available to start or revisit.
+    static func highestUnlockedWeek(for profile: UserProfile) -> Int {
+        (1...Constants.Curriculum.totalWeeks).last { isWeekUnlocked(week: $0, profile: profile) }
+            ?? profile.currentWeek
+    }
+
+    /// Advances the main-track week ONLY when the student has actually completed
+    /// the current week's required sessions. Progression is completion-based, never
+    /// driven by the calendar — so an unfinished week is never silently skipped.
+    /// Revisiting an earlier week (`finishedWeek` < currentWeek) never advances.
+    static func advanceCurrentWeekIfComplete(
+        for profile: UserProfile, finishedWeek: Int, in context: ModelContext
+    ) {
+        guard finishedWeek == profile.currentWeek else { return }
         let next = profile.currentWeek + 1
         guard next <= Constants.Curriculum.totalWeeks else { return }
-        if isWeekUnlocked(week: next, profile: profile) {
-            profile.currentWeek = next
-            profile.currentLevel = week(next).level
-            seedGrammarTopicsIfNeeded(for: profile, in: context)
-            try? context.save()
-        }
+
+        let sessionsForCurrent = profile.sessions.filter { $0.weekNumber == profile.currentWeek }.count
+        guard sessionsForCurrent >= Constants.Curriculum.sessionsToCompleteWeek else { return }
+
+        profile.currentWeek = next
+        profile.currentLevel = week(next).level
+        seedGrammarTopicsIfNeeded(for: profile, in: context)
+        seedVocabularyIfNeeded(for: profile, in: context)
+        try? context.save()
     }
 
     // MARK: - Content delivery
@@ -83,5 +99,30 @@ struct CurriculumService {
             }
         }
         try? context.save()
+    }
+
+    // MARK: - Vocabulary seeding
+
+    /// Inserts this week's (and any earlier unlocked weeks') vocabulary into the
+    /// profile and schedules it for spaced repetition, so the Review phase
+    /// actually contains vocabulary recall — not just error corrections.
+    static func seedVocabularyIfNeeded(for profile: UserProfile, in context: ModelContext) {
+        let srs = SRSService()
+        let existing = Set(profile.vocabulary.map { "\($0.german)#\($0.weekIntroduced)" })
+        var insertedAny = false
+
+        for week in 1...min(profile.currentWeek, Constants.Curriculum.totalWeeks) {
+            for item in VocabularyLibrary.items(forWeek: week) {
+                let key = "\(item.german)#\(item.weekIntroduced)"
+                guard !existing.contains(key) else { continue }
+                srs.scheduleNewVocabularyItem(item)
+                context.insert(item)
+                profile.vocabulary.append(item)
+                insertedAny = true
+            }
+        }
+        if insertedAny {
+            try? context.save()
+        }
     }
 }

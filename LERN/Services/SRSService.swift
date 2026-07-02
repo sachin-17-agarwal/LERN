@@ -5,21 +5,19 @@ import SwiftData
 /// and error records (anything conforming to `Reviewable`).
 struct SRSService {
 
-    /// Recall quality used in the SM-2 easiness-factor update.
-    enum Quality {
-        case fail        // 0.0
-        case hint        // 0.8 — correct, but needed a hint
-        case correct     // 1.0
+    /// Recall quality on the standard SM-2 0–5 scale (five discrete levels).
+    /// Research consistently shows 5-level granularity produces materially better
+    /// scheduling than the 3-level variant because EF updates are more precise.
+    enum Quality: Int {
+        case blackout = 0   // complete blank — no memory at all
+        case fail     = 1   // recalled wrong answer
+        case hint     = 2   // correct only with strong prompting
+        case correct  = 3   // correct with noticeable effort
+        case good     = 4   // correct, small hesitation
+        case easy     = 5   // instant correct recall
 
-        var value: Double {
-            switch self {
-            case .fail:    return 0.0
-            case .hint:    return 0.8
-            case .correct: return 1.0
-            }
-        }
-
-        var passed: Bool { self != .fail }
+        /// SM-2 passes at quality ≥ 3 (any correct recall).
+        var passed: Bool { rawValue >= 3 }
     }
 
     // MARK: - Scheduling new items
@@ -50,7 +48,7 @@ struct SRSService {
         }
 
         if !quality.passed {
-            // Failure: reset the interval to 1 day, keep counting reviews.
+            // Failure: restart the learning sequence from the beginning.
             item.interval = 1
         } else {
             switch item.reviewCount {
@@ -61,37 +59,215 @@ struct SRSService {
             default:
                 item.interval = Int((Double(item.interval) * item.easinessFactor).rounded())
             }
-            // Update easiness factor, floored at 1.3.
-            let q = quality.value
-            item.easinessFactor = max(1.3, item.easinessFactor + 0.1 - (1 - q) * 0.8)
         }
+
+        // Standard SM-2 EF formula — updated on every review (pass or fail).
+        // EF' = EF + (0.1 - (5-q)(0.08 + (5-q)·0.02)), floored at 1.3.
+        let q = Double(quality.rawValue)
+        let delta = 0.1 - (5 - q) * (0.08 + (5 - q) * 0.02)
+        item.easinessFactor = max(1.3, item.easinessFactor + delta)
 
         item.nextReviewDate = Date().adding(days: max(item.interval, 1))
     }
 
     /// Convenience wrapper accepting a simple correct/incorrect flag.
+    /// Synthetic drill items (multipleChoice, fillInBlank, genderDrill) have no
+    /// backing Reviewable record, so they are silently skipped here — the caller
+    /// should use recordReview(_:quality:) directly on the wrapped model if needed.
     func recordReview(item: ReviewItem, correct: Bool) {
-        recordReview(item.reviewable, quality: correct ? .correct : .fail)
+        guard let reviewable = item.reviewable else { return }
+        recordReview(reviewable, quality: correct ? .good : .fail)
     }
 
     // MARK: - Fetching due items
 
-    /// Returns all SRS items (errors + vocabulary) due on or before today,
-    /// soonest first.
+    /// Returns up to `limit` review items for the session, mixing SRS-due items
+    /// with freshly generated gender drills, fill-in-blank, and multiple-choice
+    /// cards so each session has real exercise variety.
+    ///
+    /// Target ratio for a batch of 8:
+    ///   2 × vocabulary recall, 2 × error correction,
+    ///   2 × gender drill, 2 × fill-in-blank / multiple-choice
     func getDueReviewItems(for profile: UserProfile, limit: Int? = nil) -> [ReviewItem] {
+        let cap = limit ?? 8
         let now = Date()
+
         let dueErrors = profile.errors
             .filter { !$0.isResolved && $0.nextReviewDate <= now }
-            .map { ReviewItem.error($0) }
-        let dueVocab = profile.vocabulary
-            .filter { $0.nextReviewDate <= now }
-            .map { ReviewItem.vocabulary($0) }
-
-        let combined = (dueErrors + dueVocab)
             .sorted { $0.nextReviewDate < $1.nextReviewDate }
 
-        if let limit { return Array(combined.prefix(limit)) }
-        return combined
+        let dueVocab = profile.vocabulary
+            .filter { $0.nextReviewDate <= now }
+            .sorted { $0.nextReviewDate < $1.nextReviewDate }
+
+        // Slots for SRS items — take oldest-due first
+        let vocabSlots  = min(2, dueVocab.count)
+        let errorSlots  = min(2, dueErrors.count)
+        let srsFill     = cap - vocabSlots - errorSlots  // remaining slots for drills
+
+        var combined: [ReviewItem] = []
+        combined += dueVocab.prefix(vocabSlots).map { .vocabulary($0) }
+        combined += dueErrors.prefix(errorSlots).map { .error($0) }
+
+        // Generate synthetic drills to fill remaining slots
+        if srsFill > 0 {
+            let genderCount = min(2, srsFill)
+            let remainingAfterGender = srsFill - genderCount
+            let fillBlankCount = min(remainingAfterGender / 2 + remainingAfterGender % 2, remainingAfterGender)
+            let mcCount = remainingAfterGender - fillBlankCount
+
+            combined += makeGenderDrills(from: profile.vocabulary, count: genderCount)
+            combined += makeFillInBlanks(from: dueErrors, count: fillBlankCount)
+            combined += makeMultipleChoiceItems(from: profile.vocabulary, dueVocab: dueVocab, count: mcCount)
+        }
+
+        return Array(combined.prefix(cap))
+    }
+
+    // MARK: - Drill generators
+
+    private func makeGenderDrills(from vocab: [VocabularyItem], count: Int) -> [ReviewItem] {
+        // Only nouns have an article; filter to those.
+        let nouns = vocab.filter { item in
+            guard let art = item.article else { return false }
+            let a = art.lowercased()
+            return a == "der" || a == "die" || a == "das"
+        }
+        guard !nouns.isEmpty else { return [] }
+
+        // Shuffle deterministically-ish by sorting on german then taking prefix.
+        let selected = nouns.shuffled().prefix(count)
+        return selected.map { item in
+            .genderDrill(GenderDrillItem(
+                id: UUID(),
+                // The stored `german` includes the article ("das Kind"); strip it
+                // so the drill shows the bare noun and doesn't give the answer away.
+                noun: Self.bareNoun(german: item.german, article: item.article!),
+                correctArticle: item.article!.lowercased(),
+                english: item.english
+            ))
+        }
+    }
+
+    /// Removes a leading definite article ("der/die/das") from a stored noun,
+    /// so "das Kind" becomes "Kind" for the gender drill prompt.
+    static func bareNoun(german: String, article: String) -> String {
+        let trimmed = german.trimmingCharacters(in: .whitespaces)
+        let candidates = [article, "der", "die", "das"]
+        for art in candidates {
+            let prefix = art.lowercased() + " "
+            if trimmed.lowercased().hasPrefix(prefix) {
+                return String(trimmed.dropFirst(prefix.count)).trimmingCharacters(in: .whitespaces)
+            }
+        }
+        return trimmed
+    }
+
+    /// Returns the noun with its definite article shown exactly once. If `german`
+    /// already starts with der/die/das it is returned unchanged; otherwise the
+    /// `article` (when present) is prepended.
+    static func articledForm(german: String, article: String?) -> String {
+        let trimmed = german.trimmingCharacters(in: .whitespaces)
+        for art in ["der ", "die ", "das "] {
+            if trimmed.lowercased().hasPrefix(art) { return trimmed }
+        }
+        guard let article, !article.isEmpty else { return trimmed }
+        return "\(article) \(trimmed)"
+    }
+
+    private func makeFillInBlanks(from errors: [ErrorRecord], count: Int) -> [ReviewItem] {
+        guard count > 0 else { return [] }
+        // Use error records that have a non-empty correctedText.
+        let eligible = errors.filter { !$0.correctedText.isEmpty }
+        let selected = eligible.shuffled().prefix(count)
+        return selected.compactMap { record in
+            guard let blank = extractFillInBlank(from: record) else { return nil }
+            return .fillInBlank(blank)
+        }
+    }
+
+    /// Attempts to turn an error correction pair into a fill-in-blank exercise
+    /// by finding the first word that differs between germanText and correctedText
+    /// and replacing it with "___".
+    private func extractFillInBlank(from record: ErrorRecord) -> FillInBlankItem? {
+        let wrongWords     = record.germanText.components(separatedBy: .whitespaces)
+        let correctedWords = record.correctedText.components(separatedBy: .whitespaces)
+        guard correctedWords.count >= 2 else { return nil }
+
+        // Find the first position where the words differ.
+        var diffIndex: Int? = nil
+        for (i, word) in correctedWords.enumerated() {
+            let wrongWord = i < wrongWords.count ? wrongWords[i] : ""
+            if word.lowercased() != wrongWord.lowercased() {
+                diffIndex = i
+                break
+            }
+        }
+        guard let idx = diffIndex else { return nil }
+
+        let answer   = correctedWords[idx]
+        var blanked  = correctedWords
+        blanked[idx] = "___"
+        let sentence = blanked.joined(separator: " ")
+
+        return FillInBlankItem(
+            id: UUID(),
+            sentence: sentence,
+            correctAnswer: answer,
+            hint: record.explanation.isEmpty ? nil : record.explanation
+        )
+    }
+
+    private func makeMultipleChoiceItems(
+        from allVocab: [VocabularyItem],
+        dueVocab: [VocabularyItem],
+        count: Int
+    ) -> [ReviewItem] {
+        guard count > 0 else { return [] }
+        // Prefer due vocab; fall back to any vocab for the question items.
+        let questionPool = (dueVocab.isEmpty ? allVocab : dueVocab).shuffled()
+        let selected = questionPool.prefix(count)
+
+        return selected.compactMap { item in
+            makeMultipleChoice(for: item, pool: allVocab)
+        }
+    }
+
+    private func makeMultipleChoice(for item: VocabularyItem, pool: [VocabularyItem]) -> ReviewItem? {
+        // Build a distractor pool — other items whose english differs.
+        let distractors = pool
+            .filter { $0.id != item.id && $0.english != item.english }
+            .shuffled()
+            .prefix(3)
+            .map { $0.english }
+
+        // If not enough unique distractors, pad with generic placeholders.
+        let padded: [String]
+        if distractors.count < 3 {
+            let pads = ["to go", "to have", "the house", "beautiful", "quickly"]
+                .filter { $0 != item.english }
+                .prefix(3 - distractors.count)
+            padded = distractors + pads
+        } else {
+            padded = distractors
+        }
+        guard padded.count == 3 else { return nil }
+
+        let correctIndex = Int.random(in: 0...3)
+        var options = padded
+        options.insert(item.english, at: correctIndex)
+
+        // `german` already includes the article for nouns ("die Frau"), so render
+        // the article exactly once — never "die die Frau".
+        let question = "What does '\(Self.articledForm(german: item.german, article: item.article))' mean?"
+
+        return .multipleChoice(MultipleChoiceItem(
+            id: UUID(),
+            question: question,
+            options: options,
+            correctIndex: correctIndex,
+            hint: nil
+        ))
     }
 
     /// Marks an error as resolved once it has been answered correctly enough times.

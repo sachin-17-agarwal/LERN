@@ -19,25 +19,25 @@ final class HomeViewModel {
 
     var currentWeekData: CurriculumWeek { CurriculumService.currentWeek(for: profile) }
 
+    /// Curriculum content for any week (used by the home week picker / revisit).
+    func weekData(_ week: Int) -> CurriculumWeek { CurriculumService.week(week) }
+
+    /// The furthest week the student may start or revisit right now.
+    var highestUnlockedWeek: Int { CurriculumService.highestUnlockedWeek(for: profile) }
+
+    /// Sessions logged against a specific curriculum week (not the calendar week).
+    func sessionsLogged(forWeek week: Int) -> Int {
+        profile.sessions.filter { $0.weekNumber == week }.count
+    }
+
+    /// Sessions needed to complete a week and advance the main track.
+    var sessionsToCompleteWeek: Int { Constants.Curriculum.sessionsToCompleteWeek }
+
     var streak: Int { profile.currentStreak }
 
     /// Today's session type, accounting for weekend deep-dive mode.
     var todaySessionType: String {
         Date().isWeekend ? "Weekend Deep Dive" : "Standard 30 min"
-    }
-
-    /// Number of sessions completed this calendar week.
-    var sessionsThisWeek: Int {
-        let cal = Calendar.current
-        guard let weekStart = cal.dateInterval(of: .weekOfYear, for: Date())?.start else { return 0 }
-        return profile.sessions.filter { $0.date >= weekStart }.count
-    }
-
-    var weeklyTarget: Int { Constants.Curriculum.weeklySessionTarget }
-
-    var weeklyProgress: Double {
-        guard weeklyTarget > 0 else { return 0 }
-        return min(1.0, Double(sessionsThisWeek) / Double(weeklyTarget))
     }
 
     var skillScores: [SkillType: Double] { profile.skillScores }

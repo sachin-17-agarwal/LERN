@@ -52,4 +52,18 @@ extension String {
         }
         return s.trimmingCharacters(in: .whitespacesAndNewlines)
     }
+
+    /// Extracts the outermost JSON object from a model reply, tolerating any
+    /// prose the model adds before or after it. Strips code fences first, then
+    /// slices from the first `{` to the last `}`. Returns the cleaned string
+    /// unchanged if no braces are found.
+    var extractingJSONObject: String {
+        let cleaned = strippingCodeFences
+        guard let first = cleaned.firstIndex(of: "{"),
+              let last = cleaned.lastIndex(of: "}"),
+              first < last else {
+            return cleaned
+        }
+        return String(cleaned[first...last])
+    }
 }

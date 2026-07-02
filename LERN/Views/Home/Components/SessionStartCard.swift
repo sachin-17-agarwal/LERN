@@ -34,15 +34,21 @@ struct SessionStartCard: View {
             .buttonStyle(.borderedProminent)
             .tint(.white)
             .foregroundStyle(Color.lernPrimary)
+            .fontDesign(.rounded)
         }
         .padding(20)
         .frame(maxWidth: .infinity)
         .background(
             LinearGradient(
-                colors: [Color.lernPrimary, Color.lernPrimary.opacity(0.8)],
+                colors: [
+                    Color.lernPrimary,
+                    Color.lernPrimary.opacity(0.85),
+                    Color(red: 0.36, green: 0.30, blue: 0.66)
+                ],
                 startPoint: .topLeading, endPoint: .bottomTrailing
             ),
-            in: RoundedRectangle(cornerRadius: 20)
+            in: RoundedRectangle(cornerRadius: 20, style: .continuous)
         )
+        .shadow(color: Color.lernPrimary.opacity(0.25), radius: 12, y: 6)
     }
 }

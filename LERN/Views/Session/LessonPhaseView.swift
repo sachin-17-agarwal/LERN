@@ -9,7 +9,7 @@ struct LessonPhaseView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(spacing: 12) {
-                        ForEach(viewModel.messages.filter { !($0.role == .user && $0.content.hasPrefix("Lass uns mit der Lektion")) }) { message in
+                        ForEach(viewModel.visibleMessages) { message in
                             AIMessageBubble(
                                 message: message,
                                 isStreaming: viewModel.isStreaming && message.content.isEmpty
@@ -22,6 +22,7 @@ struct LessonPhaseView: View {
                     }
                     .padding()
                 }
+                .scrollDismissesKeyboard(.interactively)
                 .onChange(of: viewModel.messages.count) {
                     if let last = viewModel.messages.last {
                         withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
@@ -31,20 +32,35 @@ struct LessonPhaseView: View {
 
             Divider()
 
-            HStack(spacing: 8) {
-                GermanTextInput(
-                    placeholder: "Schreibe einen Satz…",
-                    text: $viewModel.lessonInput,
-                    onSubmit: send
+            if let sentence = viewModel.practiceSentence {
+                // A speaking exercise is active — show only the mic card (with its
+                // own Skip) so it doesn't compete with the typing field.
+                LessonPracticeCard(
+                    sentence: sentence,
+                    onResult: { result in
+                        Task { await viewModel.submitPronunciationResult(result, sentence: sentence) }
+                    },
+                    onDismiss: { viewModel.dismissPractice() }
                 )
-                Button(action: send) {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .font(.title)
-                        .foregroundStyle(Color.lernPrimary)
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+                .id(sentence)   // fresh recorder state per exercise
+            } else {
+                HStack(spacing: 8) {
+                    GermanTextInput(
+                        placeholder: "Schreibe einen Satz…",
+                        text: $viewModel.lessonInput,
+                        onSubmit: send
+                    )
+                    Button(action: send) {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .font(.title)
+                            .foregroundStyle(Color.lernPrimary)
+                    }
+                    .disabled(viewModel.isStreaming || viewModel.lessonInput.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
-                .disabled(viewModel.isStreaming || viewModel.lessonInput.trimmingCharacters(in: .whitespaces).isEmpty)
+                .padding()
             }
-            .padding()
         }
         .task {
             await viewModel.startLesson()

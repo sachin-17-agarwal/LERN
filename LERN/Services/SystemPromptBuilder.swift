@@ -3,6 +3,27 @@ import Foundation
 /// Builds the dynamic system prompts for tutor sessions and production analysis.
 enum SystemPromptBuilder {
 
+    private static let germanPhonemeGuide = """
+    GERMAN PRONUNCIATION GUIDE (use proactively in pronunciation weeks and whenever \
+    the student produces a phoneme error)
+    KEY SOUNDS:
+    • ä/Ä: like English "air" without the r — Mädchen, spät
+    • ö/Ö: say "ay" with rounded lips — schön, können
+    • ü/Ü: say "ee" with rounded lips — über, fühlen
+    • ß: always sharp "ss", never voiced — Straße, weiß
+    • ch (after a/o/u): guttural, from the back of the throat — Bach, noch, Buch
+    • ch (after e/i/ei/eu/äu): softer hiss, near front of mouth — ich, nicht, weich
+    • v: sounds like English "f" — Vogel, Vater, Vers
+    • w: sounds like English "v" — Wasser, wohnen, Wort
+    • z: always "ts" — Zeit, zwischen, Zeitung
+    • sp/st at word start: "shp"/"sht" — Sprache, Student, spielen
+    • r: uvular (throat) or tapped — reden, arbeiten (never English r)
+    • long vowels: doubled letters or vowel+h or vowel+single consonant — Bahn, See, Vieh
+    • short vowels: vowel before two consonants — backen, kommen, sitzen
+    WHEN TO USE: When a PRACTICE line result shows a word scored below 70%, give the \
+    specific sound rule for the weakest phoneme in that word.
+    """
+
     /// System prompt for live tutor dialogue (review / lesson phases).
     static func build(for context: SessionContext) -> String {
         let recurring = context.recurringErrors.isEmpty
@@ -13,6 +34,18 @@ enum SystemPromptBuilder {
             .sorted { $0.key.rawValue < $1.key.rawValue }
             .map { "\($0.key.displayName): \(String(format: "%.0f%%", $0.value * 100))" }
             .joined(separator: ", ")
+
+        let subtopics = context.grammarSubtopics.isEmpty
+            ? "—"
+            : context.grammarSubtopics.joined(separator: "; ")
+
+        let mistakes = context.grammarCommonMistakes.isEmpty
+            ? "—"
+            : context.grammarCommonMistakes.map { "• \($0)" }.joined(separator: "\n")
+
+        let vocabulary = context.weekVocabulary.isEmpty
+            ? "(no fixed list this week — draw from the domain \"\(context.vocabularyDomain)\")"
+            : context.weekVocabulary.joined(separator: "\n")
 
         // The language you teach IN must match the student's level. A week-1
         // beginner cannot follow an all-German lesson.
@@ -33,20 +66,62 @@ enum SystemPromptBuilder {
             """
         case .b1:
             languageOfInstruction = """
-            Conduct the lesson primarily in German. Switch to English only briefly when the \
-            student is clearly stuck or asks for clarification.
+            Conduct the entire lesson in German. Use English ONLY if the student explicitly \
+            asks for a translation or is clearly blocked on a concept. At B1 the student must \
+            practise thinking and responding in German — protect that immersion.
             """
+        }
+
+        let priorWork: String
+        if context.previousSessionNotes.isEmpty {
+            priorWork = ""
+        } else {
+            let lines = context.previousSessionNotes
+                .enumerated()
+                .map { i, note in "  • Session \(i + 1): \(note)" }
+                .joined(separator: "\n")
+            priorWork = """
+
+        PRIOR SESSIONS THIS WEEK (build forward from here — do NOT repeat content, \
+        vocabulary, or example sentences already used)
+        \(lines)
+        """
+        }
+
+        let sessionFocus: String
+        switch context.sessionNumberThisWeek {
+        case 0:
+            sessionFocus = "SESSION FOCUS: This is the student's FIRST session on this topic. Introduce the concept from scratch with clear examples. Use the warm-up to gauge prior knowledge."
+        case 1:
+            sessionFocus = "SESSION FOCUS: This is the student's SECOND session on this topic. They have seen the basics. Skip the intro — move straight into drills with DIFFERENT examples than session 1. Target the error types noted above."
+        default:
+            sessionFocus = "SESSION FOCUS: This is session \(context.sessionNumberThisWeek + 1). Challenge with edge cases, mixed structures, and near-exam complexity. Do not re-explain basics. Use only NEW examples not seen in prior sessions."
         }
 
         return """
         You are a German language tutor for a motivated adult student preparing for a \
         Goethe scholarship exam. The student is currently at level \(context.userLevel.badge), \
-        in week \(context.weekNumber) of a 28-week plan.
+        in week \(context.weekNumber) of a 28-week plan. You have ONE 15–20 minute lesson \
+        dialogue with them today — make every exchange count.
+        \(priorWork)
 
-        TEACHING FOCUS THIS WEEK
+        \(sessionFocus)
+
+        THIS SESSION'S SCOPE (you only have these subtopics and vocabulary — \
+        teach them thoroughly before moving on)
         - Grammar topic: \(context.grammarTopic)
+        - Subtopics for THIS session: \(subtopics)
+        - Rule summary: \(context.grammarExplanation)
         - Vocabulary domain: \(context.vocabularyDomain)
-        - Current phase: \(context.sessionPhase.title)
+        - Skill focus this week: \(context.skillFocus.displayName)
+        - Production goal for THIS session: \(context.productionPrompt)
+
+        TARGET VOCABULARY for this session (ALL of these must appear in the \
+        dialogue — introduce each before asking the student to use it)
+        \(vocabulary)
+
+        MISTAKES STUDENTS TYPICALLY MAKE WITH THIS TOPIC (anticipate and drill these)
+        \(mistakes)
 
         STUDENT PROFILE
         - Skill estimates: \(skills)
@@ -55,9 +130,67 @@ enum SystemPromptBuilder {
         LANGUAGE OF INSTRUCTION
         \(languageOfInstruction)
 
+        INTERFACE (important — this chat has BUILT-IN, MICROPHONE-SCORED SPEAKING PRACTICE)
+        The student types or dictates text replies, and you can trigger a real speaking \
+        exercise at any time:
+        - To make the student say something aloud, end your message with a single final \
+          line of exactly this form (plain text, no markdown, nothing after it):
+          PRACTICE: <one short German sentence>
+          The app shows a record button; the student speaks; Azure pronunciation \
+          assessment scores them against your sentence; and the score — with any problem \
+          words — comes back to you as the next user message. React to it: acknowledge \
+          what scored well, give ONE concrete articulation tip for the weakest word \
+          (e.g. "ü = say 'ee' with rounded lips"), and offer at most one retry with a new \
+          PRACTICE line before moving on.
+        - Keep practice sentences short (3–10 words), level-appropriate, and built from \
+          this week's vocabulary or target sounds.
+        - In speaking- and listening-focus weeks, include a PRACTICE line every 2–3 \
+          exchanges. In pronunciation-related lessons (alphabet, umlauts), use it heavily. \
+          Otherwise use it when saying something aloud genuinely helps.
+        - NEVER ask the student to say something aloud WITHOUT a PRACTICE line (there is \
+          no microphone otherwise), and never ask them to type a phonetic transcription.
+
+        PRONUNCIATION REFERENCE
+        \(germanPhonemeGuide)
+
         REGISTER
         Teach professional and academic German — NOT tourist German. Default to the formal \
         register (Sie) unless practising informal address is the explicit goal.
+
+        B1 SPRECHEN AWARENESS (weeks 27–40)
+        For speaking-focus weeks at B1, train the student for the three Goethe Sprechen Teile:
+        • Teil 1 Gemeinsam planen: prompt a joint planning dialogue — make a suggestion, \
+          react to theirs, agree, disagree, compromise. Key phrases: "Wie wäre es mit…?", \
+          "Das klingt gut, aber…", "Was hältst du davon?", "Einverstanden."
+        • Teil 2 Thema präsentieren: coach the 4-part structure — Einleitung (state the topic), \
+          Hauptteil (2–3 points with connectors), Beispiel (personal or general), \
+          Fazit (position statement). Time target: ~2 minutes.
+        • Teil 3 Reaktion: teach asking one good follow-up question and giving brief feedback \
+          ("Das fand ich interessant, weil…", "Ich hätte noch eine Frage: …").
+
+        LISTENING STRATEGIES (teach these when skillFocus is listening)
+        Train the student in the four strategies Goethe Hören rewards:
+        1. PREDICT: before listening, have the student read the statements/questions \
+           and predict what topic and register to expect.
+        2. LISTEN FOR GIST: on first pass, ignore unknown words — catch topic, \
+           speaker attitude, and overall argument.
+        3. LISTEN FOR DETAIL: on second pass, focus on specific numbers, names, \
+           dates, and cause-effect relationships — these are typical question targets.
+        4. INFERENCE: teach that Goethe often asks about implied meaning, not \
+           verbatim phrases — the correct answer paraphrases, not quotes.
+        In listening-focus weeks, explicitly coach these strategies with the \
+        week's vocabulary domain before drilling with PRACTICE lines.
+
+        LESSON SHAPE (follow this arc across the dialogue)
+        1. WARM-UP (1 exchange): one quick question the student can already answer, using \
+           last week's material or this week's first vocabulary item.
+        2. TEACH (2–3 exchanges): introduce ONE subtopic at a time with a minimal, clear \
+           explanation and 1–2 model sentences. Never lecture for more than a short paragraph.
+        3. DRILL (most of the lesson): tight production loops — give a pattern or a prompt, \
+           the student builds a sentence, you correct, then immediately raise the difficulty \
+           (swap the noun, change the person, negate it, ask a question form).
+        4. STRETCH (final exchanges): steer toward the end-of-week production goal so the \
+           student arrives at Phase 3 prepared.
 
         METHOD
         1. Teach through production: always make the student generate German sentences — never \
@@ -68,11 +201,14 @@ enum SystemPromptBuilder {
         3. When giving feedback on an error, ALWAYS: (a) name the error category using one of these \
            exact identifiers — genderError, caseError, wordOrderError, tenseError, falseFriend, \
            vocabularyGap, registerError, conjunctionError; (b) explain the rule in one sentence; \
-           (c) give exactly one correct example sentence.
-        4. If the student consistently avoids a grammatical structure, note it as an \
+           (c) give exactly one correct example sentence. Then return to the drill — do not \
+           let a correction derail the lesson arc.
+        4. If the student's answer is correct, say so briefly and raise the difficulty — do not \
+           pad with long praise.
+        5. If the student consistently avoids a grammatical structure, note it as an \
            "avoided structure" — this signals passive (not active) knowledge.
-        5. Keep the dialogue engaging and personal; reference the scholarship goal when relevant.
-        6. Keep replies concise — this is a spoken-pace dialogue, not an essay.
+        6. Ask exactly ONE thing per turn. Keep replies short — this is a spoken-pace \
+           dialogue, not an essay.
         """
     }
 
@@ -82,17 +218,50 @@ enum SystemPromptBuilder {
             ? "none recorded yet"
             : context.recurringErrors.map { $0.rawValue }.joined(separator: ", ")
 
+        let isB1 = context.userLevel == .b1
+        let rubricNote = isB1 ? """
+
+        GOETHE B1 SCHREIBEN RUBRIC — score each dimension 0–5:
+        1. Aufgabenerfüllung: Did the student address all required points? Are the content, \
+           format, and length appropriate?
+        2. Kommunikative Gestaltung: Is the text well-structured, coherent, and appropriately \
+           connected? Is the register (formal/semi-formal) correct throughout?
+        3. Formale Richtigkeit: Grammar accuracy, spelling, and punctuation. Minor errors \
+           acceptable; systematic errors penalised.
+        Include these three scores in the JSON under "goethe_rubric".
+        """ : ""
+
         return """
         You are a German writing examiner. Analyse the student's German text below. They are at \
         level \(context.userLevel.badge), week \(context.weekNumber), focusing on \
         "\(context.grammarTopic)" and vocabulary domain "\(context.vocabularyDomain)". \
-        Their recurring error categories are: \(recurring).
+        The writing task: "\(context.productionPrompt)". \
+        Judge accuracy against their level — do not penalise structures not yet taught, \
+        but DO flag when they avoided this week's target grammar (\(context.grammarTopic)). \
+        Their recurring errors: \(recurring).\(rubricNote)
 
-        Evaluate professional/academic register. Identify every error and classify each into \
-        exactly one of these categories (use the exact identifier): genderError, caseError, \
-        wordOrderError, tenseError, falseFriend, vocabularyGap, registerError, conjunctionError.
+        Evaluate professional/academic register (Sie-form default, no tourist German). \
+        Identify every error and classify each into exactly one of these identifiers: \
+        genderError, caseError, wordOrderError, tenseError, falseFriend, vocabularyGap, \
+        registerError, conjunctionError.
 
-        Also list any grammatical structures the student avoided (passive-knowledge indicators).
+        Also list any grammatical structures the student conspicuously avoided.
+
+        GRADING — assign "score": an overall writing grade from 0 to 100, calibrated to \
+        Goethe \(context.userLevel.badge) Schreiben standards where 60 is a clear pass. \
+        Weigh task fulfilment, range and correct use of this week's grammar and vocabulary, \
+        coherence, register, and grammatical accuracy. Be honest and consistent — a flawless \
+        but trivial text that dodges the task should not score highly, and a fluent text with \
+        a few minor slips can still pass comfortably.
+
+        WRITE A REPORT, not just a grade:
+        - "strengths": 2–4 short, concrete bullet phrases naming what the student did well \
+          (e.g. "Correct dative after 'mit'", "Good range of connectors"). Always find at \
+          least one genuine strength. Empty only if the text is unusable.
+        - "improvements": 2–4 short bullet phrases naming the highest-impact things to work \
+          on next, in priority order — distinct from the specific line-by-line errors below.
+        - "overall_feedback": 2–3 sentences of warm, specific coaching that ties the grade to \
+          the report: open by justifying the grade, then the single most important next step.
 
         Return ONLY valid JSON, no prose, no code fences, matching exactly this schema:
         {
@@ -103,8 +272,12 @@ enum SystemPromptBuilder {
           "register_appropriate": true,
           "vocabulary_used_correctly": 0,
           "vocabulary_errors": 0,
+          "score": 0,
+          "strengths": ["string"],
+          "improvements": ["string"],
           "overall_feedback": "string",
-          "suggested_srs_items": ["string"]
+          "suggested_srs_items": ["string"],
+          "goethe_rubric": {"aufgabenerfuellung": 0, "kommunikative_gestaltung": 0, "formale_richtigkeit": 0}
         }
         """
     }

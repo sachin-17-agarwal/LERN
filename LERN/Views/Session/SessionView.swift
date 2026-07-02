@@ -1,5 +1,7 @@
 import SwiftUI
 import SwiftData
+import UIKit
+import Combine
 
 /// Container view managing the three-phase session flow and transitions.
 struct SessionView: View {
@@ -7,6 +9,9 @@ struct SessionView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var showEndConfirmation = false
+    /// Tracks the on-screen keyboard so the bottom action bar can step aside —
+    /// otherwise it collides with the keyboard's umlaut accessory row.
+    @State private var keyboardVisible = false
 
     var body: some View {
         NavigationStack {
@@ -19,9 +24,20 @@ struct SessionView: View {
 
                 phaseContent
                     .frame(maxHeight: .infinity)
+                    .transition(.opacity.combined(with: .move(edge: .trailing)))
+                    .animation(.spring(response: 0.45, dampingFraction: 0.85),
+                               value: viewModel.currentPhase)
 
-                Divider()
-                bottomBar
+                if !keyboardVisible {
+                    Divider()
+                    bottomBar
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+                keyboardVisible = true
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+                keyboardVisible = false
             }
             .navigationTitle(viewModel.weekData.grammarTopic)
             .navigationBarTitleDisplayMode(.inline)
@@ -30,6 +46,7 @@ struct SessionView: View {
                     Button("End") { showEndConfirmation = true }
                 }
             }
+            .interactiveDismissDisabled()
             .confirmationDialog(
                 "End this session?",
                 isPresented: $showEndConfirmation,
@@ -53,7 +70,20 @@ struct SessionView: View {
     }
 
     private var bottomBar: some View {
-        HStack {
+        HStack(spacing: 10) {
+            if viewModel.canGoBackPhase {
+                Button {
+                    viewModel.goToPreviousPhase()
+                } label: {
+                    Label("Back", systemImage: "chevron.left")
+                        .labelStyle(.iconOnly)
+                        .frame(minWidth: 44, minHeight: 30)
+                }
+                .buttonStyle(.bordered)
+                .tint(.lernPrimary)
+                .accessibilityLabel("Back to \(viewModel.currentPhase.previous?.title ?? "")")
+            }
+
             if viewModel.currentPhase == .production {
                 Button {
                     finish()

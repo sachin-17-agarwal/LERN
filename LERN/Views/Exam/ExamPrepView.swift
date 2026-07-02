@@ -7,8 +7,7 @@ struct ExamPrepView: View {
     @Query private var profiles: [UserProfile]
 
     @State private var examVM: ExamViewModel?
-    @State private var showExam = false
-    @State private var selectedLevel = "A2"
+    @State private var selectedLevel = "B1"
     @State private var showAPIKeyPrompt = false
 
     private var profile: UserProfile? { profiles.first }
@@ -25,10 +24,8 @@ struct ExamPrepView: View {
             .background(Color.lernBackground)
             .navigationTitle("Exam Prep")
         }
-        .fullScreenCover(isPresented: $showExam) {
-            if let examVM {
-                MockExamView(viewModel: examVM)
-            }
+        .fullScreenCover(item: $examVM) { vm in
+            MockExamView(viewModel: vm)
         }
         .alert("Add your API key", isPresented: $showAPIKeyPrompt) {
             Button("OK", role: .cancel) {}
@@ -61,9 +58,13 @@ struct ExamPrepView: View {
                 .frame(maxWidth: .infinity)
                 .padding()
                 .foregroundStyle(.white)
-                .background(Color.lernPrimary, in: RoundedRectangle(cornerRadius: 16))
+                .background(
+                    Color.lernPrimary.gradient,
+                    in: RoundedRectangle(cornerRadius: LernDesign.cardRadius, style: .continuous)
+                )
+                .shadow(color: Color.lernPrimary.opacity(0.25), radius: 10, y: 4)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.lernPressable)
 
             // Skill-specific practice
             VStack(alignment: .leading, spacing: 12) {
@@ -79,11 +80,10 @@ struct ExamPrepView: View {
                                 Text(skill.displayName).font(.caption2).foregroundStyle(.secondary)
                             }
                             .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 14))
+                            .lernCard(radius: 14)
                             .foregroundStyle(Color.forSkill(skill))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.lernPressable)
                     }
                 }
             }
@@ -100,8 +100,18 @@ struct ExamPrepView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Past Results").font(.headline)
             if results.isEmpty {
-                Text("No mock exams taken yet.")
-                    .font(.footnote).foregroundStyle(.secondary)
+                VStack(spacing: 8) {
+                    Image(systemName: "doc.text.magnifyingglass")
+                        .font(.title2)
+                        .foregroundStyle(.tertiary)
+                    Text("No mock exams taken yet.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                    Text("Take a mock exam to see your results here.")
+                        .font(.caption2).foregroundStyle(.tertiary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 20)
+                .lernCard(radius: LernDesign.smallRadius)
             } else {
                 ForEach(results) { result in
                     NavigationLink {
@@ -111,30 +121,38 @@ struct ExamPrepView: View {
                             Image(systemName: result.passed ? "checkmark.seal.fill" : "xmark.seal")
                                 .foregroundStyle(result.passed ? Color.lernSuccess : Color.lernError)
                             VStack(alignment: .leading) {
-                                Text("\(result.examLevel) · \(Int(result.totalScore))/100")
+                                Text(resultLabel(result))
                                     .fontWeight(.medium)
+                                    .lernStatNumber()
                                 Text(result.date.shortDateString)
                                     .font(.caption).foregroundStyle(.secondary)
                             }
                             Spacer()
                             Image(systemName: "chevron.right").foregroundStyle(.tertiary)
                         }
-                        .padding()
-                        .background(Color.lernSurface, in: RoundedRectangle(cornerRadius: 12))
+                        .lernCard(radius: LernDesign.smallRadius)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.lernPressable)
                 }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// "Reading practice · 80/100" for skill practice, "B1 · 72/100" for a full exam.
+    private func resultLabel(_ result: ExamResult) -> String {
+        if let skill = result.practicedSkill {
+            return "\(skill.displayName) practice · \(Int(result.totalScore))/100"
+        }
+        return "\(result.examLevel) · \(Int(result.totalScore))/100"
+    }
+
     private func launchFullMock(profile: UserProfile) {
         guard KeychainManager.hasAPIKey else { showAPIKeyPrompt = true; return }
         let vm = ExamViewModel(profile: profile, modelContext: modelContext)
         vm.selectedLevel = selectedLevel
+        vm.isGenerating = true   // show spinner immediately on first render
         examVM = vm
-        showExam = true
         Task { await vm.startFullMock() }
     }
 
@@ -142,8 +160,8 @@ struct ExamPrepView: View {
         guard KeychainManager.hasAPIKey else { showAPIKeyPrompt = true; return }
         let vm = ExamViewModel(profile: profile, modelContext: modelContext)
         vm.selectedLevel = selectedLevel
+        vm.isGenerating = true   // show spinner immediately on first render
         examVM = vm
-        showExam = true
         Task { await vm.startSkillPractice(skill) }
     }
 }

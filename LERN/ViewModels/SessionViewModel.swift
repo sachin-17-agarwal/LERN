@@ -38,21 +38,80 @@ final class SessionViewModel: Identifiable {
     var lessonInput: String = ""
     var isStreaming: Bool = false
     private var streamingMessageID: UUID?
+    private var openerMessageID: UUID?
+
+    /// Messages to render in the chat — hides the synthetic kick-off instruction.
+    var visibleMessages: [Message] {
+        messages.filter { $0.id != openerMessageID }
+    }
+
+    // MARK: - In-chat speaking practice
+
+    /// Sentence the tutor asked the student to say aloud, parsed from a
+    /// trailing "PRACTICE:" line in the reply. Drives the inline mic card,
+    /// which records the student and scores them via Azure.
+    var practiceSentence: String?
+
+    private static let practiceMarker = "PRACTICE:"
+
+    /// Pulls a trailing `PRACTICE: <sentence>` line out of the latest tutor
+    /// message so it renders as a mic card instead of chat text.
+    private func extractPracticeSentence() {
+        guard let idx = messages.lastIndex(where: { $0.role == .assistant }) else { return }
+        var lines = messages[idx].content.components(separatedBy: "\n")
+        guard let lineIdx = lines.lastIndex(where: {
+            $0.trimmingCharacters(in: .whitespaces).hasPrefix(Self.practiceMarker)
+        }) else { return }
+
+        let sentence = String(
+            lines[lineIdx].trimmingCharacters(in: .whitespaces).dropFirst(Self.practiceMarker.count)
+        ).trimmingCharacters(in: .whitespaces)
+
+        lines.remove(at: lineIdx)
+        messages[idx].content = lines.joined(separator: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if !sentence.isEmpty {
+            practiceSentence = sentence
+        }
+    }
+
+    /// Skips the current speaking exercise.
+    func dismissPractice() {
+        practiceSentence = nil
+    }
+
+    /// Posts the Azure pronunciation score into the dialogue so the tutor can
+    /// coach on it, then streams the tutor's reaction.
+    func submitPronunciationResult(_ result: PronunciationResult, sentence: String) async {
+        practiceSentence = nil
+        let problems = result.words.filter(\.isProblem).map(\.word)
+        var report = "🎤 I said: „\(sentence)“ — pronunciation score \(Int(result.pronunciation))/100" +
+            " (accuracy \(Int(result.accuracy)), fluency \(Int(result.fluency)), completeness \(Int(result.completeness)))."
+        if !problems.isEmpty {
+            report += " Problem words: \(problems.joined(separator: ", "))."
+        }
+        messages.append(Message(role: .user, content: report))
+        await streamTutorReply()
+    }
 
     // MARK: - Production phase
     var productionText: String = ""
     var productionAnalysis: ProductionAnalysis?
     var isAnalysing: Bool = false
+    var revisionCount: Int = 0
+    var previousErrors: [ProductionAnalysis.ErrorItem] = []
 
     // MARK: - Error surface
     var errorMessage: String?
 
     // MARK: - Init
 
-    init(profile: UserProfile, modelContext: ModelContext) {
+    /// - Parameter targetWeek: the curriculum week to study. Defaults to the
+    ///   profile's current week; pass an earlier (unlocked) week to revisit it.
+    init(profile: UserProfile, modelContext: ModelContext, targetWeek: Int? = nil) {
         self.profile = profile
         self.modelContext = modelContext
-        self.weekData = CurriculumService.currentWeek(for: profile)
+        self.weekData = CurriculumService.week(targetWeek ?? profile.currentWeek)
         self.sessionType = Date().isWeekend ? "weekend" : "standard"
         loadReviewItems()
         startTimer()
@@ -81,7 +140,7 @@ final class SessionViewModel: Identifiable {
     // MARK: - Review phase
 
     private func loadReviewItems() {
-        reviewItems = srs.getDueReviewItems(for: profile, limit: 3)
+        reviewItems = srs.getDueReviewItems(for: profile, limit: 8)
     }
 
     var currentReviewItem: ReviewItem? {
@@ -123,8 +182,21 @@ final class SessionViewModel: Identifiable {
     /// Kicks off the lesson with an opening tutor turn.
     func startLesson() async {
         guard messages.isEmpty else { return }
-        // Seed with a user "start" instruction so the model opens the lesson.
-        let opener = Message(role: .user, content: "Lass uns mit der Lektion beginnen. Bitte führe das Grammatikthema dieser Woche ein und lass mich Sätze bilden.")
+        // Seed with a hidden user "start" instruction so the model opens the
+        // lesson. Kept in English: the system prompt decides the teaching
+        // language, and a week-1 beginner shouldn't see German meta-talk.
+        let sessionNum = profile.sessions.filter { $0.weekNumber == weekData.weekNumber }.count
+        let openerContent: String
+        switch sessionNum {
+        case 0:
+            openerContent = "Begin today's lesson now. Start with the warm-up, then introduce this week's grammar topic and get me producing sentences."
+        case 1:
+            openerContent = "Begin today's lesson. Skip the warm-up and the intro — I've seen this topic before. Jump straight into production drills with new examples I haven't seen."
+        default:
+            openerContent = "Begin today's lesson. No warm-up, no intro — go straight to challenging edge cases, common mistakes, and near-exam complexity for this week's topic. Use examples we haven't worked through before."
+        }
+        let opener = Message(role: .user, content: openerContent)
+        openerMessageID = opener.id
         messages.append(opener)
         await streamTutorReply()
     }
@@ -133,9 +205,87 @@ final class SessionViewModel: Identifiable {
     func sendLessonMessage() async {
         let trimmed = lessonInput.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
+        practiceSentence = nil    // typing past the mic card skips the exercise
         messages.append(Message(role: .user, content: trimmed))
         lessonInput = ""
         await streamTutorReply()
+    }
+
+    /// Builds the Sendable AI context for the given phase. Called on the main
+    /// actor so no @Model object crosses into the nonisolated networking code.
+    private func makeContext(phase: SessionPhase, history: [Message]) -> SessionContext {
+        let grammar = CurriculumService.getGrammarContent(week: weekData.weekNumber)
+        let allVocab = CurriculumService.getVocabularyList(week: weekData.weekNumber)
+            .map { item -> String in
+                var entry = "\(item.german) — \(item.english)"
+                if let plural = item.plural { entry += " (pl. \(plural))" }
+                return entry
+            }
+        let priorSessions = profile.sessions
+            .filter { $0.weekNumber == weekData.weekNumber && !$0.sessionNotes.isEmpty }
+            .sorted { $0.date < $1.date }
+            .suffix(2)
+            .map { $0.sessionNotes }
+
+        let sessionNum = profile.sessions.filter { $0.weekNumber == weekData.weekNumber }.count
+
+        // Divide grammar subtopics across the 3 sessions so each session
+        // literally only sees its portion — the AI cannot re-intro what it hasn't seen.
+        let allSubtopics = weekData.grammarSubtopics
+        let sessionSubtopics: [String]
+        switch sessionNum {
+        case 0:
+            // First session: first half of subtopics (introduce from scratch)
+            sessionSubtopics = Array(allSubtopics.prefix(max(1, (allSubtopics.count + 1) / 2)))
+        case 1:
+            // Second session: second half of subtopics (build on session 1)
+            let skip = max(1, (allSubtopics.count + 1) / 2)
+            let second = Array(allSubtopics.dropFirst(skip))
+            sessionSubtopics = second.isEmpty ? allSubtopics : second
+        default:
+            // Third session+: all subtopics combined for integration and challenge
+            sessionSubtopics = allSubtopics
+        }
+
+        // Split vocabulary: session 1 gets first half, session 2 gets second half,
+        // session 3 gets everything for consolidation.
+        let sessionVocab: [String]
+        let half = max(1, allVocab.count / 2)
+        switch sessionNum {
+        case 0:  sessionVocab = Array(allVocab.prefix(half))
+        case 1:  sessionVocab = Array(allVocab.dropFirst(half))
+        default: sessionVocab = allVocab
+        }
+
+        // Production goal scales in complexity across sessions.
+        let sessionProductionPrompt: String
+        switch sessionNum {
+        case 0:
+            sessionProductionPrompt = "Write 2–3 simple sentences using today's grammar and vocabulary. Focus on getting the structure right — don't worry about length yet."
+        case 1:
+            sessionProductionPrompt = "Write a short paragraph (4–6 sentences) using both this week's grammar subtopics. Aim to use at least 5 of this week's vocabulary words."
+        default:
+            sessionProductionPrompt = weekData.productionPrompt + " Use all of this week's grammar subtopics and at least 8 vocabulary words. Aim for exam-level quality."
+        }
+
+        return SessionContext(
+            weekNumber: weekData.weekNumber,
+            grammarTopic: weekData.grammarTopic,
+            grammarSubtopics: sessionSubtopics,
+            grammarExplanation: grammar.explanation,
+            grammarCommonMistakes: grammar.commonMistakes,
+            vocabularyDomain: weekData.vocabularyDomain,
+            weekVocabulary: sessionVocab,
+            productionPrompt: sessionProductionPrompt,
+            skillFocus: weekData.skillFocus,
+            userLevel: profile.currentLevel,
+            recurringErrors: ErrorAnalysis.topRecurringCategories(for: profile),
+            skillScores: profile.skillScores,
+            sessionPhase: phase,
+            conversationHistory: history,
+            sessionNumberThisWeek: sessionNum,
+            previousSessionNotes: Array(priorSessions)
+        )
     }
 
     private func streamTutorReply() async {
@@ -143,16 +293,7 @@ final class SessionViewModel: Identifiable {
         isStreaming = true
         defer { isStreaming = false }
 
-        let context = SessionContext(
-            weekNumber: weekData.weekNumber,
-            grammarTopic: weekData.grammarTopic,
-            vocabularyDomain: weekData.vocabularyDomain,
-            userLevel: profile.currentLevel,
-            recurringErrors: ErrorAnalysis.topRecurringCategories(for: profile),
-            skillScores: profile.skillScores,
-            sessionPhase: .lesson,
-            conversationHistory: messages
-        )
+        let context = makeContext(phase: .lesson, history: messages)
 
         let assistantMessage = Message(role: .assistant, content: "")
         streamingMessageID = assistantMessage.id
@@ -164,6 +305,7 @@ final class SessionViewModel: Identifiable {
                     messages[idx].content += delta
                 }
             }
+            extractPracticeSentence()
         } catch {
             // Remove the empty assistant bubble and surface the error.
             messages.removeAll { $0.id == streamingMessageID && $0.content.isEmpty }
@@ -182,18 +324,7 @@ final class SessionViewModel: Identifiable {
         isAnalysing = true
         defer { isAnalysing = false }
 
-        // Build the Sendable context here on the main actor so no @Model object
-        // crosses into the nonisolated networking code.
-        let context = SessionContext(
-            weekNumber: weekData.weekNumber,
-            grammarTopic: weekData.grammarTopic,
-            vocabularyDomain: weekData.vocabularyDomain,
-            userLevel: profile.currentLevel,
-            recurringErrors: ErrorAnalysis.topRecurringCategories(for: profile),
-            skillScores: profile.skillScores,
-            sessionPhase: .production,
-            conversationHistory: []
-        )
+        let context = makeContext(phase: .production, history: [])
 
         do {
             let analysis = try await anthropic.analyseProduction(
@@ -205,6 +336,13 @@ final class SessionViewModel: Identifiable {
         } catch {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
         }
+    }
+
+    func startRevision() {
+        previousErrors = productionAnalysis?.errors ?? []
+        productionAnalysis = nil
+        productionText = ""
+        revisionCount += 1
     }
 
     /// Saves each error from the analysis as an ErrorRecord scheduled for SRS.
@@ -225,6 +363,41 @@ final class SessionViewModel: Identifiable {
         try? modelContext.save()
     }
 
+    /// Builds a compact text summary of what happened this session.
+    /// Stored on the session record and injected into the next session's prompt
+    /// so the AI knows exactly what was covered and what to build on.
+    private func buildSessionNotes(session: StudySession) -> String {
+        let sessionNum = profile.sessions.filter { $0.weekNumber == weekData.weekNumber }.count + 1
+        var parts = ["Session \(sessionNum) of week \(weekData.weekNumber)"]
+
+        if !reviewItems.isEmpty {
+            parts.append("Review: \(reviewCorrectCount)/\(reviewItems.count) correct")
+        }
+
+        let phases = completedPhases.map { $0.title }.joined(separator: " → ")
+        parts.append("Phases: \(phases)")
+
+        if let analysis = productionAnalysis {
+            parts.append("Production grade: \(analysis.displayScore)/100")
+            let cats = analysis.errors.map { $0.category }
+            if cats.isEmpty {
+                parts.append("Production: no errors")
+            } else {
+                let unique = Array(Set(cats)).sorted().joined(separator: ", ")
+                parts.append("Production errors: \(unique)")
+            }
+            if !analysis.avoided_structures.isEmpty {
+                parts.append("Avoided: \(analysis.avoided_structures.joined(separator: ", "))")
+            }
+        } else if !productionText.isEmpty {
+            parts.append("Production: submitted (no analysis)")
+        } else {
+            parts.append("Production: skipped")
+        }
+
+        return parts.joined(separator: ". ")
+    }
+
     // MARK: - Phase transitions
 
     /// Whether the user has spent the minimum time to advance the current phase.
@@ -240,6 +413,17 @@ final class SessionViewModel: Identifiable {
             currentPhase = next
         }
     }
+
+    /// Returns to the previous phase. Conversation, review progress, and any
+    /// production analysis are all retained, so stepping back (e.g. after an
+    /// accidental tap on "Continue") loses nothing.
+    func goToPreviousPhase() {
+        if let previous = currentPhase.previous {
+            currentPhase = previous
+        }
+    }
+
+    var canGoBackPhase: Bool { currentPhase.previous != nil }
 
     // MARK: - Finishing
 
@@ -264,15 +448,68 @@ final class SessionViewModel: Identifiable {
         session.productionText = productionText
         if let analysis = productionAnalysis {
             session.productionFeedback = analysis.overall_feedback
+            session.productionScore = analysis.displayScore
+            session.productionStrengths = analysis.strengthsList
+            session.productionImprovements = analysis.improvementsList
             session.errorsFound = analysis.errors.count
             session.avoidedStructuresNoted = analysis.avoided_structures
         }
+        session.sessionNotes = buildSessionNotes(session: session)
         session.profile = profile
         modelContext.insert(session)
         profile.sessions.append(session)
 
         updateStreakAndMinutes(addedMinutes: session.durationMinutes)
+        updateSkillScores(session: session)
         try? modelContext.save()
+        // Advance the main track only when THIS week's required sessions are done —
+        // never on the calendar alone, so an unfinished week is never skipped.
+        CurriculumService.advanceCurrentWeekIfComplete(
+            for: profile, finishedWeek: weekData.weekNumber, in: modelContext
+        )
+    }
+
+    /// Nudges skill scores based on what the session covered.
+    /// Scores are 0–100; each session can move a skill by up to ~2 points.
+    private func updateSkillScores(session: StudySession) {
+        let reviewAccuracy: Double = reviewItems.isEmpty ? 0.5 :
+            Double(reviewCorrectCount) / Double(reviewItems.count)
+        let hadProduction = !session.productionText.isEmpty
+
+        func clamp(_ v: Double) -> Double { min(1.0, max(0, v)) }
+        let gain = 0.04    // ~4 percentage points per session (values are 0.0–1.0)
+
+        switch weekData.skillFocus {
+        case .reading:
+            profile.readingScore   = clamp(profile.readingScore   + gain * reviewAccuracy)
+            profile.listeningScore = clamp(profile.listeningScore + gain * 0.3)
+        case .listening:
+            profile.listeningScore = clamp(profile.listeningScore + gain * reviewAccuracy)
+            profile.readingScore   = clamp(profile.readingScore   + gain * 0.3)
+        case .writing:
+            // Writing is driven by the production grade below; nudge a baseline here
+            // only when nothing was submitted to grade.
+            if !hadProduction {
+                profile.writingScore = clamp(profile.writingScore + gain * 0.3)
+            }
+            profile.readingScore   = clamp(profile.readingScore   + gain * 0.3)
+        case .speaking:
+            profile.speakingScore  = clamp(profile.speakingScore  + gain * reviewAccuracy)
+            profile.listeningScore = clamp(profile.listeningScore + gain * 0.3)
+        }
+        // All sessions improve reading slightly via SRS review
+        if weekData.skillFocus != .reading {
+            profile.readingScore = clamp(profile.readingScore + gain * 0.2 * reviewAccuracy)
+        }
+
+        // The production grade is the real writing signal — ease the writing
+        // score toward it whenever a piece was actually graded, in any week.
+        if hadProduction, let analysis = productionAnalysis {
+            let target = Double(analysis.displayScore) / 100.0
+            let step = (target - profile.writingScore) * 0.25     // close 25% of the gap
+            let bounded = max(-gain * 2, min(gain * 2, step))      // cap movement per session
+            profile.writingScore = clamp(profile.writingScore + bounded)
+        }
     }
 
     private func updateStreakAndMinutes(addedMinutes: Int) {
