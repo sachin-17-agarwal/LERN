@@ -26,8 +26,16 @@ enum Constants {
 
     enum Audio {
         static let germanLanguageCode = "de-DE"
-        static let speechRate: Float = 0.5    // Natural default rate — slower compact voices lose flow
+        /// Slightly below AVSpeechUtteranceDefaultSpeechRate (0.5): learners need
+        /// time to hear word boundaries and endings, and 0.5 feels rushed.
+        static let speechRate: Float = 0.45
+        /// Single vocabulary words are spoken slower still so the article and
+        /// ending are clearly audible.
+        static let wordSpeechRate: Float = 0.4
         static let pitch: Float = 1.0
+        /// Pause after each sentence — multi-sentence text is queued as one
+        /// utterance per sentence so playback breathes instead of rushing on.
+        static let sentencePause: TimeInterval = 0.4
     }
 
     enum Speech {

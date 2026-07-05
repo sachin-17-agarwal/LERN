@@ -17,23 +17,28 @@ final class AudioService: NSObject {
         synthesizer.delegate = self
     }
 
-    /// Speaks German text aloud at a learner-friendly rate.
-    /// - Parameter extractGermanOnly: when true (for mixed-language tutor
-    ///   messages), only the German portions are spoken so the German voice
-    ///   doesn't mangle English words.
-    func speak(_ text: String, extractGermanOnly: Bool = false) {
-        let toSpeak = extractGermanOnly
-            ? SpeechTextProcessor.germanOnly(from: text)
-            : SpeechTextProcessor.clean(text)
-        guard !toSpeak.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+    /// Speaks German text aloud at a learner-friendly rate. Each sentence is
+    /// queued as its own utterance with a short pause after it, so multi-
+    /// sentence text flows naturally instead of being rushed through in one go.
+    /// - Parameters:
+    ///   - extractGermanOnly: when true (for mixed-language tutor messages),
+    ///     only the German portions are spoken so the German voice doesn't
+    ///     mangle English words.
+    ///   - rate: speech rate; defaults to the learner-friendly sentence rate.
+    func speak(_ text: String, extractGermanOnly: Bool = false, rate: Float = Constants.Audio.speechRate) {
+        let sentences = SpeechTextProcessor.sentences(from: text, germanOnly: extractGermanOnly)
+        guard !sentences.isEmpty else { return }
         stop()
         configureAudioSession()
 
-        let utterance = AVSpeechUtterance(string: toSpeak)
-        utterance.voice = bestGermanVoice
-        utterance.rate = Constants.Audio.speechRate
-        utterance.pitchMultiplier = Constants.Audio.pitch
-        synthesizer.speak(utterance)
+        for sentence in sentences {
+            let utterance = AVSpeechUtterance(string: sentence)
+            utterance.voice = bestGermanVoice
+            utterance.rate = rate
+            utterance.pitchMultiplier = Constants.Audio.pitch
+            utterance.postUtteranceDelay = Constants.Audio.sentencePause
+            synthesizer.speak(utterance)
+        }
         isSpeaking = true
     }
 
@@ -57,7 +62,7 @@ final class AudioService: NSObject {
         if let plural = word.plural, !plural.isEmpty {
             phrase += ", \(plural)"
         }
-        speak(phrase)
+        speak(phrase, rate: Constants.Audio.wordSpeechRate)
     }
 
     func stop() {
@@ -76,10 +81,16 @@ final class AudioService: NSObject {
 
 extension AudioService: AVSpeechSynthesizerDelegate {
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        Task { @MainActor in self.isSpeaking = false }
+        // Fires once per queued sentence — only clear the flag when the whole
+        // queue has drained.
+        Task { @MainActor in
+            if !self.synthesizer.isSpeaking { self.isSpeaking = false }
+        }
     }
 
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
-        Task { @MainActor in self.isSpeaking = false }
+        Task { @MainActor in
+            if !self.synthesizer.isSpeaking { self.isSpeaking = false }
+        }
     }
 }
