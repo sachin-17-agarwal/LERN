@@ -28,7 +28,9 @@ struct SessionView: View {
                     .animation(.spring(response: 0.45, dampingFraction: 0.85),
                                value: viewModel.currentPhase)
 
-                if !keyboardVisible {
+                // The exit quiz brings its own controls — hide the phase bar
+                // so "Continue" can't skip past an unfinished quiz.
+                if !keyboardVisible && !viewModel.showExitQuiz {
                     Divider()
                     bottomBar
                 }
@@ -94,15 +96,28 @@ struct SessionView: View {
                 .tint(.lernSuccess)
             } else {
                 Button {
-                    viewModel.advancePhase()
+                    if viewModel.currentPhase == .lesson {
+                        // Leaving the lesson runs the exit quiz first.
+                        Task { await viewModel.continueFromLesson() }
+                    } else {
+                        viewModel.advancePhase()
+                    }
                 } label: {
-                    Label("Continue to \(viewModel.currentPhase.next?.title ?? "")",
-                          systemImage: "arrow.right")
+                    if viewModel.isGeneratingExitQuiz {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                            Text("Preparing quiz…")
+                        }
                         .frame(maxWidth: .infinity)
+                    } else {
+                        Label("Continue to \(viewModel.currentPhase.next?.title ?? "")",
+                              systemImage: "arrow.right")
+                            .frame(maxWidth: .infinity)
+                    }
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.lernPrimary)
-                .disabled(!viewModel.canAdvancePhase)
+                .disabled(!viewModel.canAdvancePhase || viewModel.isGeneratingExitQuiz)
             }
         }
         .padding()

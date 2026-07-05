@@ -12,6 +12,11 @@ final class ErrorRecord {
     var errorCategory: ErrorCategory = ErrorCategory.vocabularyGap
     var explanation: String = ""                  // Why it was wrong
     var weekIntroduced: Int = 1                    // Curriculum week when this type was taught
+    /// Where the record came from: "production" (default — a sentence the user
+    /// wrote wrongly) or "quiz" (a missed exit-quiz question, where germanText
+    /// holds the question and correctedText the answer). Review renders the
+    /// two differently.
+    var source: String = ErrorRecord.sourceProduction
 
     // SRS fields
     var reviewCount: Int = 0
@@ -28,7 +33,8 @@ final class ErrorRecord {
         correctedText: String,
         errorCategory: ErrorCategory,
         explanation: String,
-        weekIntroduced: Int
+        weekIntroduced: Int,
+        source: String = ErrorRecord.sourceProduction
     ) {
         self.id = UUID()
         self.timestamp = Date()
@@ -37,6 +43,12 @@ final class ErrorRecord {
         self.errorCategory = errorCategory
         self.explanation = explanation
         self.weekIntroduced = weekIntroduced
+        self.source = source
         self.nextReviewDate = Date()
     }
+
+    static let sourceProduction = "production"
+    static let sourceQuiz = "quiz"
+
+    var isQuizMiss: Bool { source == ErrorRecord.sourceQuiz }
 }

@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// Phase 1 — spaced repetition review of up to three due items.
+/// Phase 1 — spaced repetition review: works through the due SRS backlog
+/// (vocabulary, past errors, quiz misses) plus synthetic drills.
 struct ReviewPhaseView: View {
     @Bindable var viewModel: SessionViewModel
     @State private var revealed = false
@@ -147,15 +148,35 @@ struct ReviewPhaseView: View {
     @ViewBuilder
     private func errorCard(_ record: ErrorRecord) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Correct this sentence").font(.headline)
-            Text(record.germanText).strikethrough().foregroundStyle(.secondary)
-            if revealed {
-                FeedbackCard(
-                    wrongText: record.germanText,
-                    correctedText: record.correctedText,
-                    category: record.errorCategory,
-                    explanation: record.explanation
-                )
+            if record.isQuizMiss {
+                // A missed exit-quiz question: germanText holds the question,
+                // correctedText the answer — a recall prompt, not a correction.
+                Text("You missed this in a quiz").font(.headline)
+                Text(record.germanText)
+                if revealed {
+                    HStack(spacing: 8) {
+                        Text(record.correctedText)
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(Color.lernSuccess)
+                        AudioPlayButton(text: record.correctedText, compact: true)
+                    }
+                    if !record.explanation.isEmpty {
+                        Text(record.explanation)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            } else {
+                Text("Correct this sentence").font(.headline)
+                Text(record.germanText).strikethrough().foregroundStyle(.secondary)
+                if revealed {
+                    FeedbackCard(
+                        wrongText: record.germanText,
+                        correctedText: record.correctedText,
+                        category: record.errorCategory,
+                        explanation: record.explanation
+                    )
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

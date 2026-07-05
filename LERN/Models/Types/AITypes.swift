@@ -27,7 +27,11 @@ struct SessionContext: Sendable {
     let grammarExplanation: String         // The week's rule summary from GrammarLibrary
     let grammarCommonMistakes: [String]
     let vocabularyDomain: String
-    let weekVocabulary: [String]           // Formatted "der Tisch — table" target words
+    /// This session's small batch of NEW words to introduce ("der Tisch — table").
+    /// Deliberately short — depth beats coverage.
+    let newVocabulary: [String]
+    /// Words from earlier sessions/weeks to recycle in drills and examples.
+    let recycleVocabulary: [String]
     let productionPrompt: String           // The week's free-production goal
     let skillFocus: SkillType
     let userLevel: CurriculumLevel
@@ -163,6 +167,18 @@ struct ProductionAnalysis: Codable, Sendable {
         default:       return "Keep practising"
         }
     }
+}
+
+/// One retrieval-practice question generated from the lesson dialogue that
+/// just happened. Shown as the post-lesson exit quiz; misses feed back into
+/// spaced repetition.
+struct ExitQuizQuestion: Identifiable, Sendable {
+    var id: UUID = UUID()
+    let question: String       // e.g. "How do you say 'I get up at 7' in German?"
+    let options: [String]      // 4 answer options
+    let correctIndex: Int      // 0-based index into options
+    let explanation: String    // one-line reminder of the rule/meaning
+    let germanAnswer: String   // the canonical German being tested (for audio + SRS)
 }
 
 /// A single review question generated for an error record.

@@ -94,6 +94,104 @@ final class SessionViewModel: Identifiable {
         await streamTutorReply()
     }
 
+    // MARK: - Exit quiz (post-lesson retrieval practice)
+
+    /// Retrieval quiz generated from the lesson dialogue, shown between the
+    /// lesson and production phases. Testing right after learning is the
+    /// single strongest retention lever, and misses feed back into SRS.
+    var exitQuiz: [ExitQuizQuestion] = []
+    var exitQuizIndex: Int = 0
+    var exitQuizCorrectCount: Int = 0
+    var isGeneratingExitQuiz: Bool = false
+    var showExitQuiz: Bool = false
+    private var exitQuizTaken = false
+
+    var currentExitQuizQuestion: ExitQuizQuestion? {
+        guard exitQuizIndex < exitQuiz.count else { return nil }
+        return exitQuiz[exitQuizIndex]
+    }
+
+    /// Called by the "Continue to Production" button while in the lesson
+    /// phase. Runs the exit quiz first (once, and only if a real dialogue
+    /// happened); if generation fails the session just moves on.
+    func continueFromLesson() async {
+        guard !isGeneratingExitQuiz, !showExitQuiz else { return }
+        if !exitQuizTaken, visibleMessages.count >= 4 {
+            exitQuizTaken = true
+            isGeneratingExitQuiz = true
+            defer { isGeneratingExitQuiz = false }
+
+            let transcript = visibleMessages
+                .map { "\($0.role == .user ? "Student" : "Tutor"): \($0.content)" }
+                .joined(separator: "\n")
+            let context = makeContext(phase: .lesson, history: [])
+            if let quiz = try? await anthropic.generateExitQuiz(transcript: transcript, context: context),
+               !quiz.isEmpty {
+                exitQuiz = quiz
+                exitQuizIndex = 0
+                exitQuizCorrectCount = 0
+                showExitQuiz = true
+                return
+            }
+        }
+        advancePhase()
+    }
+
+    /// Records one answered quiz question. A miss becomes an SRS error record
+    /// so the exact point resurfaces in future review phases.
+    func recordExitQuizAnswer(correct: Bool, question: ExitQuizQuestion) {
+        if correct {
+            exitQuizCorrectCount += 1
+        } else {
+            let record = ErrorRecord(
+                germanText: question.question,
+                correctedText: question.germanAnswer,
+                errorCategory: .vocabularyGap,
+                explanation: question.explanation,
+                weekIntroduced: weekData.weekNumber,
+                source: ErrorRecord.sourceQuiz
+            )
+            srs.scheduleNewError(record)
+            record.profile = profile
+            modelContext.insert(record)
+            profile.errors.append(record)
+            try? modelContext.save()
+        }
+    }
+
+    /// Moves to the next quiz question, or closes the quiz and enters the
+    /// production phase after the last one.
+    func advanceExitQuiz() {
+        if exitQuizIndex + 1 < exitQuiz.count {
+            exitQuizIndex += 1
+        } else {
+            showExitQuiz = false
+            advancePhase()
+        }
+    }
+
+    // MARK: - Production scaffolding
+
+    /// The full week vocabulary, shown as a word bank on the production screen
+    /// so the student writes with support instead of facing a blank box.
+    @ObservationIgnored
+    lazy var productionWordBank: [VocabularyItem] =
+        CurriculumService.getVocabularyList(week: weekData.weekNumber)
+
+    /// Model sentences from the week's grammar content — patterns to imitate.
+    @ObservationIgnored
+    lazy var productionModelSentences: [String] =
+        Array(CurriculumService.getGrammarContent(week: weekData.weekNumber).examples.prefix(3))
+
+    /// Appends a word-bank word to the draft (with a leading space if needed).
+    func insertProductionWord(_ german: String) {
+        if productionText.isEmpty || productionText.hasSuffix(" ") || productionText.hasSuffix("\n") {
+            productionText += german
+        } else {
+            productionText += " " + german
+        }
+    }
+
     // MARK: - Production phase
     var productionText: String = ""
     var productionAnalysis: ProductionAnalysis?
@@ -140,7 +238,7 @@ final class SessionViewModel: Identifiable {
     // MARK: - Review phase
 
     private func loadReviewItems() {
-        reviewItems = srs.getDueReviewItems(for: profile, limit: 8)
+        reviewItems = srs.getDueReviewItems(for: profile)
     }
 
     var currentReviewItem: ReviewItem? {
@@ -185,15 +283,15 @@ final class SessionViewModel: Identifiable {
         // Seed with a hidden user "start" instruction so the model opens the
         // lesson. Kept in English: the system prompt decides the teaching
         // language, and a week-1 beginner shouldn't see German meta-talk.
-        let sessionNum = profile.sessions.filter { $0.weekNumber == weekData.weekNumber }.count
+        let sessionNum = sessionNumberThisWeek
         let openerContent: String
         switch sessionNum {
         case 0:
             openerContent = "Begin today's lesson now. Start with the warm-up, then introduce this week's grammar topic and get me producing sentences."
-        case 1:
-            openerContent = "Begin today's lesson. Skip the warm-up and the intro — I've seen this topic before. Jump straight into production drills with new examples I haven't seen."
+        case 1, 2:
+            openerContent = "Begin today's lesson. Start with a quick recall warm-up on what we covered last session, then teach today's new material and drill me with fresh examples."
         default:
-            openerContent = "Begin today's lesson. No warm-up, no intro — go straight to challenging edge cases, common mistakes, and near-exam complexity for this week's topic. Use examples we haven't worked through before."
+            openerContent = "Begin today's consolidation session. Quiz me on this week's material, focus on whatever I get wrong, and don't introduce anything new."
         }
         let opener = Message(role: .user, content: openerContent)
         openerMessageID = opener.id
@@ -211,23 +309,44 @@ final class SessionViewModel: Identifiable {
         await streamTutorReply()
     }
 
+    /// 0-based count of sessions already completed on this week. Also drives
+    /// vocabulary batching, so it must read the same before and during a
+    /// session (the session only persists on finish).
+    private var sessionNumberThisWeek: Int {
+        profile.sessions.filter { $0.weekNumber == weekData.weekNumber }.count
+    }
+
+    /// Splits the week's vocabulary into per-session batches: this session
+    /// introduces a small `new` slice and recycles everything `introduced`
+    /// before it. Keeps the intake rate at something spaced repetition can
+    /// actually sustain instead of dumping the whole week at once.
+    private func vocabularyBatches() -> (new: [VocabularyItem], introduced: [VocabularyItem]) {
+        let all = CurriculumService.getVocabularyList(week: weekData.weekNumber)
+        let batch = Constants.Curriculum.newWordsPerSession
+        let start = min(sessionNumberThisWeek * batch, all.count)
+        let end = min(start + batch, all.count)
+        return (Array(all[start..<end]), Array(all[..<start]))
+    }
+
     /// Builds the Sendable AI context for the given phase. Called on the main
     /// actor so no @Model object crosses into the nonisolated networking code.
     private func makeContext(phase: SessionPhase, history: [Message]) -> SessionContext {
         let grammar = CurriculumService.getGrammarContent(week: weekData.weekNumber)
-        let allVocab = CurriculumService.getVocabularyList(week: weekData.weekNumber)
-            .map { item -> String in
-                var entry = "\(item.german) — \(item.english)"
-                if let plural = item.plural { entry += " (pl. \(plural))" }
-                return entry
-            }
+
+        func format(_ item: VocabularyItem) -> String {
+            var entry = "\(item.german) — \(item.english)"
+            if let plural = item.plural { entry += " (pl. \(plural))" }
+            return entry
+        }
+        let batches = vocabularyBatches()
+
         let priorSessions = profile.sessions
             .filter { $0.weekNumber == weekData.weekNumber && !$0.sessionNotes.isEmpty }
             .sorted { $0.date < $1.date }
             .suffix(2)
             .map { $0.sessionNotes }
 
-        let sessionNum = profile.sessions.filter { $0.weekNumber == weekData.weekNumber }.count
+        let sessionNum = sessionNumberThisWeek
 
         // Divide grammar subtopics across the 3 sessions so each session
         // literally only sees its portion — the AI cannot re-intro what it hasn't seen.
@@ -245,16 +364,6 @@ final class SessionViewModel: Identifiable {
         default:
             // Third session+: all subtopics combined for integration and challenge
             sessionSubtopics = allSubtopics
-        }
-
-        // Split vocabulary: session 1 gets first half, session 2 gets second half,
-        // session 3 gets everything for consolidation.
-        let sessionVocab: [String]
-        let half = max(1, allVocab.count / 2)
-        switch sessionNum {
-        case 0:  sessionVocab = Array(allVocab.prefix(half))
-        case 1:  sessionVocab = Array(allVocab.dropFirst(half))
-        default: sessionVocab = allVocab
         }
 
         // Production goal scales in complexity across sessions.
@@ -275,7 +384,8 @@ final class SessionViewModel: Identifiable {
             grammarExplanation: grammar.explanation,
             grammarCommonMistakes: grammar.commonMistakes,
             vocabularyDomain: weekData.vocabularyDomain,
-            weekVocabulary: sessionVocab,
+            newVocabulary: batches.new.map(format),
+            recycleVocabulary: batches.introduced.map(format),
             productionPrompt: sessionProductionPrompt,
             skillFocus: weekData.skillFocus,
             userLevel: profile.currentLevel,
@@ -374,6 +484,10 @@ final class SessionViewModel: Identifiable {
             parts.append("Review: \(reviewCorrectCount)/\(reviewItems.count) correct")
         }
 
+        if !exitQuiz.isEmpty {
+            parts.append("Exit quiz: \(exitQuizCorrectCount)/\(exitQuiz.count) correct")
+        }
+
         let phases = completedPhases.map { $0.title }.joined(separator: " → ")
         parts.append("Phases: \(phases)")
 
@@ -434,6 +548,10 @@ final class SessionViewModel: Identifiable {
         }
         timerTask?.cancel()
 
+        // Must run before the session record is appended — the vocabulary
+        // batch is derived from the pre-finish session count.
+        markSessionVocabularyIntroduced()
+
         let session = StudySession(
             date: startTime,
             weekNumber: weekData.weekNumber,
@@ -467,6 +585,21 @@ final class SessionViewModel: Identifiable {
         CurriculumService.advanceCurrentWeekIfComplete(
             for: profile, finishedWeek: weekData.weekNumber, in: modelContext
         )
+    }
+
+    /// Marks this session's vocabulary batch as formally introduced so it
+    /// enters the review rotation from the next session. Only runs when the
+    /// lesson phase actually happened.
+    private func markSessionVocabularyIntroduced() {
+        guard completedPhases.contains(.lesson) else { return }
+        let taught = Set(vocabularyBatches().new.map { $0.german })
+        guard !taught.isEmpty else { return }
+        let now = Date()
+        for item in profile.vocabulary
+        where item.weekIntroduced == weekData.weekNumber && !item.isIntroduced && taught.contains(item.german) {
+            item.isIntroduced = true
+            item.nextReviewDate = now
+        }
     }
 
     /// Nudges skill scores based on what the session covered.

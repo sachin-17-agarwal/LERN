@@ -5,6 +5,14 @@ struct LessonPhaseView: View {
     @Bindable var viewModel: SessionViewModel
 
     var body: some View {
+        if viewModel.showExitQuiz {
+            ExitQuizView(viewModel: viewModel)
+        } else {
+            chat
+        }
+    }
+
+    private var chat: some View {
         VStack(spacing: 0) {
             ScrollViewReader { proxy in
                 ScrollView {
