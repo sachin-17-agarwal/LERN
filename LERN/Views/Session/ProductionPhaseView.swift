@@ -14,11 +14,13 @@ struct ProductionPhaseView: View {
 
                 if let analysis = viewModel.productionAnalysis {
                     resultsView(analysis)
-                } else if viewModel.revisionCount > 0 && !viewModel.previousErrors.isEmpty {
-                    previousErrorsPanel
-                    editor
                 } else {
+                    if viewModel.revisionCount > 0 && !viewModel.previousErrors.isEmpty {
+                        previousErrorsPanel
+                    }
+                    modelPatternsCard
                     editor
+                    wordBankCard
                 }
             }
             .padding()
@@ -63,6 +65,76 @@ struct ProductionPhaseView: View {
         .padding()
         .background(Color.lernError.opacity(0.07),
                     in: RoundedRectangle(cornerRadius: LernDesign.smallRadius, style: .continuous))
+    }
+
+    /// Model sentences from the week's grammar — templates to adapt, so the
+    /// student starts from a pattern instead of a blank page.
+    @ViewBuilder
+    private var modelPatternsCard: some View {
+        let patterns = viewModel.productionModelSentences
+        if !patterns.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Label("Patterns to build on", systemImage: "text.quote")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.lernAccent)
+                ForEach(patterns, id: \.self) { example in
+                    HStack(spacing: 8) {
+                        Text(example)
+                            .font(.footnote)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        AudioPlayButton(text: example, compact: true)
+                    }
+                }
+                Text("Swap in your own words — the structure is the hard part.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+            .background(Color.lernAccent.opacity(0.08),
+                        in: RoundedRectangle(cornerRadius: LernDesign.smallRadius, style: .continuous))
+        }
+    }
+
+    /// This week's vocabulary as tappable chips — tapping inserts the German
+    /// word into the draft. Recall support, not a dictionary hunt.
+    @ViewBuilder
+    private var wordBankCard: some View {
+        let words = viewModel.productionWordBank
+        if !words.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                Label("Word bank — tap to insert", systemImage: "tray.full")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.lernPrimary)
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 130), spacing: 8, alignment: .leading)],
+                          alignment: .leading, spacing: 8) {
+                    ForEach(words, id: \.id) { word in
+                        Button {
+                            viewModel.insertProductionWord(word.german)
+                        } label: {
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(word.german)
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundStyle(word.article == nil ? Color.primary : Color.forArticle(word.article))
+                                Text(word.english)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(Color.lernSurface,
+                                        in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+            .background(Color.lernPrimary.opacity(0.06),
+                        in: RoundedRectangle(cornerRadius: LernDesign.smallRadius, style: .continuous))
+        }
     }
 
     private var editor: some View {

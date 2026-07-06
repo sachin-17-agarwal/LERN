@@ -22,12 +22,37 @@ enum Constants {
         static let sessionsToCompleteWeek = 3
         /// Standard target sessions per week.
         static let weeklySessionTarget = 3
+        /// New vocabulary formally introduced per session. The rest of the
+        /// week's list waits for later sessions — words the student hasn't met
+        /// yet never enter review, and the tutor never has to cram the full
+        /// weekly list into one dialogue.
+        static let newWordsPerSession = 8
+        /// Review-phase batch: work through the real SRS backlog up to this
+        /// many items per session, so due items can't pile up unseen.
+        static let reviewSessionCap = 20
+        /// Minimum review-phase length — topped up with synthetic drills when
+        /// few SRS items are due.
+        static let reviewSessionFloor = 8
+        /// A week only completes when review accuracy across its sessions
+        /// reaches this level; below it, extra sessions become consolidation.
+        static let masteryAccuracyThreshold = 0.7
+        /// Safety valve: after this many sessions the week completes regardless
+        /// of accuracy, so nobody is stuck on one week forever.
+        static let maxSessionsPerWeek = 5
     }
 
     enum Audio {
         static let germanLanguageCode = "de-DE"
-        static let speechRate: Float = 0.5    // Natural default rate — slower compact voices lose flow
+        /// Slightly below AVSpeechUtteranceDefaultSpeechRate (0.5): learners need
+        /// time to hear word boundaries and endings, and 0.5 feels rushed.
+        static let speechRate: Float = 0.45
+        /// Single vocabulary words are spoken slower still so the article and
+        /// ending are clearly audible.
+        static let wordSpeechRate: Float = 0.4
         static let pitch: Float = 1.0
+        /// Pause after each sentence — multi-sentence text is queued as one
+        /// utterance per sentence so playback breathes instead of rushing on.
+        static let sentencePause: TimeInterval = 0.4
     }
 
     enum Speech {

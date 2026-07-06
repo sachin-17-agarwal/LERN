@@ -56,11 +56,32 @@ struct CurriculumService {
         let sessionsForCurrent = profile.sessions.filter { $0.weekNumber == profile.currentWeek }.count
         guard sessionsForCurrent >= Constants.Curriculum.sessionsToCompleteWeek else { return }
 
+        // Mastery gate: the week holds until review accuracy clears the bar,
+        // so the curriculum can't outrun retention. Extra sessions on the week
+        // run as consolidation. Safety valve after maxSessionsPerWeek so a
+        // student is never stuck indefinitely; no review data counts as clear
+        // (nothing was due to fail).
+        if sessionsForCurrent < Constants.Curriculum.maxSessionsPerWeek,
+           let accuracy = weekReviewAccuracy(for: profile, week: profile.currentWeek),
+           accuracy < Constants.Curriculum.masteryAccuracyThreshold {
+            return
+        }
+
         profile.currentWeek = next
         profile.currentLevel = week(next).level
         seedGrammarTopicsIfNeeded(for: profile, in: context)
         seedVocabularyIfNeeded(for: profile, in: context)
         try? context.save()
+    }
+
+    /// Review accuracy pooled across every session logged against a week.
+    /// Returns nil when those sessions contained no review items at all.
+    static func weekReviewAccuracy(for profile: UserProfile, week: Int) -> Double? {
+        let sessions = profile.sessions.filter { $0.weekNumber == week }
+        let total = sessions.reduce(0) { $0 + $1.reviewItemsCount }
+        guard total > 0 else { return nil }
+        let correct = sessions.reduce(0) { $0 + $1.reviewCorrectCount }
+        return Double(correct) / Double(total)
     }
 
     // MARK: - Content delivery
@@ -109,7 +130,6 @@ struct CurriculumService {
     static func seedVocabularyIfNeeded(for profile: UserProfile, in context: ModelContext) {
         let srs = SRSService()
         let existing = Set(profile.vocabulary.map { "\($0.german)#\($0.weekIntroduced)" })
-        var insertedAny = false
 
         for week in 1...min(profile.currentWeek, Constants.Curriculum.totalWeeks) {
             for item in VocabularyLibrary.items(forWeek: week) {
@@ -118,11 +138,34 @@ struct CurriculumService {
                 srs.scheduleNewVocabularyItem(item)
                 context.insert(item)
                 profile.vocabulary.append(item)
-                insertedAny = true
             }
         }
-        if insertedAny {
-            try? context.save()
+        reconcileIntroducedFlags(for: profile)
+        try? context.save()
+    }
+
+    /// Keeps `isIntroduced` consistent with what the student has actually
+    /// covered: completed (earlier) weeks and anything already reviewed count
+    /// as introduced; for the current week, the first
+    /// `sessions × newWordsPerSession` words in curriculum order — the batches
+    /// past sessions taught. This also backfills the flag for profiles created
+    /// before it existed.
+    private static func reconcileIntroducedFlags(for profile: UserProfile) {
+        for item in profile.vocabulary where !item.isIntroduced {
+            if item.weekIntroduced < profile.currentWeek || item.reviewCount > 0 {
+                item.isIntroduced = true
+            }
+        }
+
+        let sessionsThisWeek = profile.sessions.filter { $0.weekNumber == profile.currentWeek }.count
+        let taughtCount = sessionsThisWeek * Constants.Curriculum.newWordsPerSession
+        guard taughtCount > 0 else { return }
+        let taughtGermans = Set(
+            VocabularyLibrary.items(forWeek: profile.currentWeek).prefix(taughtCount).map { $0.german }
+        )
+        for item in profile.vocabulary
+        where item.weekIntroduced == profile.currentWeek && !item.isIntroduced && taughtGermans.contains(item.german) {
+            item.isIntroduced = true
         }
     }
 }

@@ -200,6 +200,50 @@ struct AnthropicService {
         return ReviewQuestion(prompt: prompt, expectedAnswer: expected, hint: json["hint"] as? String)
     }
 
+    // MARK: - Exit quiz generation
+
+    /// Generates the post-lesson retrieval quiz from the dialogue that just
+    /// happened. Questions must test only material actually covered, so the
+    /// full transcript is the source of truth.
+    func generateExitQuiz(transcript: String, context: SessionContext) async throws -> [ExitQuizQuestion] {
+        let system = """
+        You are creating a short retrieval quiz for a German lesson that JUST ended. \
+        The student is at level \(context.userLevel.badge), week \(context.weekNumber), \
+        topic "\(context.grammarTopic)". Below is the full lesson transcript. Create \
+        EXACTLY 5 multiple-choice questions that test ONLY words, sentences, and grammar \
+        rules that actually appear in the transcript — nothing new. Mix the directions: \
+        at least one English→German, one German→English, and one grammar-application \
+        question (e.g. pick the correct form). Write questions in English at A1/A2, \
+        mostly German at B1. Each has exactly 4 options with ONE correct answer; wrong \
+        options should be plausible (typical learner confusions). Keep every option short.
+
+        Return ONLY valid JSON, no prose, no code fences:
+        {"questions":[{"question":"...","options":["...","...","...","..."],
+        "correctIndex":0,"explanation":"one short sentence","germanAnswer":"the German word or sentence being tested"}]}
+        """
+        let userMessage = Message(role: .user, content: "LESSON TRANSCRIPT:\n\(transcript)")
+        let raw = try await complete(system: system, messages: [userMessage])
+        let cleaned = raw.extractingJSONObject
+        guard let data = cleaned.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let questions = json["questions"] as? [[String: Any]] else {
+            throw AnthropicError.decodingFailed("exit quiz JSON malformed")
+        }
+        return questions.compactMap { q in
+            guard let question = q["question"] as? String,
+                  let options = q["options"] as? [String], options.count >= 2,
+                  let correctIndex = q["correctIndex"] as? Int,
+                  options.indices.contains(correctIndex) else { return nil }
+            return ExitQuizQuestion(
+                question: question,
+                options: options,
+                correctIndex: correctIndex,
+                explanation: q["explanation"] as? String ?? "",
+                germanAnswer: q["germanAnswer"] as? String ?? options[correctIndex]
+            )
+        }
+    }
+
     // MARK: - Mock exam section generation
 
     func generateMockExamSection(skill: SkillType, level: String) async throws -> ExamSection {

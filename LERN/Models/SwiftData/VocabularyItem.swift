@@ -13,6 +13,10 @@ final class VocabularyItem {
     var topicDomain: String = ""                   // e.g. "workplace", "daily_life"
     var level: CurriculumLevel = CurriculumLevel.a1
     var weekIntroduced: Int = 1
+    /// Whether this word has been formally taught in a lesson. Seeded words
+    /// start unintroduced and only enter the review rotation once a session has
+    /// covered them — review never quizzes words the student hasn't met.
+    var isIntroduced: Bool = false
 
     // SRS fields (same as ErrorRecord)
     var reviewCount: Int = 0

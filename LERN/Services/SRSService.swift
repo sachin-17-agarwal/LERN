@@ -81,44 +81,55 @@ struct SRSService {
 
     // MARK: - Fetching due items
 
-    /// Returns up to `limit` review items for the session, mixing SRS-due items
-    /// with freshly generated gender drills, fill-in-blank, and multiple-choice
-    /// cards so each session has real exercise variety.
+    /// Returns the review batch for a session. Works through the real SRS
+    /// backlog first — every due vocabulary word and unresolved error, oldest
+    /// first, vocab and errors interleaved — then tops the session up with
+    /// synthetic drills for exercise variety. Sessions run between
+    /// `reviewSessionFloor` and `reviewSessionCap` items, so due items are
+    /// actually worked off instead of piling up behind a tiny fixed quota.
     ///
-    /// Target ratio for a batch of 8:
-    ///   2 × vocabulary recall, 2 × error correction,
-    ///   2 × gender drill, 2 × fill-in-blank / multiple-choice
+    /// Only vocabulary the student has formally met (`isIntroduced`) is
+    /// eligible — review reinforces taught material, it doesn't teach.
     func getDueReviewItems(for profile: UserProfile, limit: Int? = nil) -> [ReviewItem] {
-        let cap = limit ?? 8
+        let cap = limit ?? Constants.Curriculum.reviewSessionCap
         let now = Date()
 
         let dueErrors = profile.errors
             .filter { !$0.isResolved && $0.nextReviewDate <= now }
             .sorted { $0.nextReviewDate < $1.nextReviewDate }
 
-        let dueVocab = profile.vocabulary
+        let knownVocab = profile.vocabulary.filter { $0.isIntroduced || $0.reviewCount > 0 }
+        let dueVocab = knownVocab
             .filter { $0.nextReviewDate <= now }
             .sorted { $0.nextReviewDate < $1.nextReviewDate }
 
-        // Slots for SRS items — take oldest-due first
-        let vocabSlots  = min(2, dueVocab.count)
-        let errorSlots  = min(2, dueErrors.count)
-        let srsFill     = cap - vocabSlots - errorSlots  // remaining slots for drills
-
+        // Interleave the two due queues oldest-first so a big vocab backlog
+        // doesn't starve error review (or vice versa).
         var combined: [ReviewItem] = []
-        combined += dueVocab.prefix(vocabSlots).map { .vocabulary($0) }
-        combined += dueErrors.prefix(errorSlots).map { .error($0) }
+        var vi = 0, ei = 0
+        while combined.count < cap, vi < dueVocab.count || ei < dueErrors.count {
+            let vocabNext = vi < dueVocab.count ? dueVocab[vi].nextReviewDate : Date.distantFuture
+            let errorNext = ei < dueErrors.count ? dueErrors[ei].nextReviewDate : Date.distantFuture
+            if vocabNext <= errorNext {
+                combined.append(.vocabulary(dueVocab[vi])); vi += 1
+            } else {
+                combined.append(.error(dueErrors[ei])); ei += 1
+            }
+        }
 
-        // Generate synthetic drills to fill remaining slots
-        if srsFill > 0 {
-            let genderCount = min(2, srsFill)
-            let remainingAfterGender = srsFill - genderCount
-            let fillBlankCount = min(remainingAfterGender / 2 + remainingAfterGender % 2, remainingAfterGender)
+        // Synthetic drills: always at least a couple for variety when there's
+        // room, and enough to reach the session floor on light days.
+        let room = cap - combined.count
+        let drillCount = min(room, max(2, Constants.Curriculum.reviewSessionFloor - combined.count))
+        if drillCount > 0 {
+            let genderCount = min(2, drillCount)
+            let remainingAfterGender = drillCount - genderCount
+            let fillBlankCount = remainingAfterGender / 2 + remainingAfterGender % 2
             let mcCount = remainingAfterGender - fillBlankCount
 
-            combined += makeGenderDrills(from: profile.vocabulary, count: genderCount)
+            combined += makeGenderDrills(from: knownVocab, count: genderCount)
             combined += makeFillInBlanks(from: dueErrors, count: fillBlankCount)
-            combined += makeMultipleChoiceItems(from: profile.vocabulary, dueVocab: dueVocab, count: mcCount)
+            combined += makeMultipleChoiceItems(from: knownVocab, dueVocab: dueVocab, count: mcCount)
         }
 
         return Array(combined.prefix(cap))
@@ -177,8 +188,10 @@ struct SRSService {
 
     private func makeFillInBlanks(from errors: [ErrorRecord], count: Int) -> [ReviewItem] {
         guard count > 0 else { return [] }
-        // Use error records that have a non-empty correctedText.
-        let eligible = errors.filter { !$0.correctedText.isEmpty }
+        // Use error records that have a non-empty correctedText. Quiz misses
+        // are excluded — their germanText is a question, not a wrong sentence,
+        // so the word-diff below would produce a nonsense blank.
+        let eligible = errors.filter { !$0.correctedText.isEmpty && !$0.isQuizMiss }
         let selected = eligible.shuffled().prefix(count)
         return selected.compactMap { record in
             guard let blank = extractFillInBlank(from: record) else { return nil }

@@ -43,9 +43,13 @@ enum SystemPromptBuilder {
             ? "—"
             : context.grammarCommonMistakes.map { "• \($0)" }.joined(separator: "\n")
 
-        let vocabulary = context.weekVocabulary.isEmpty
-            ? "(no fixed list this week — draw from the domain \"\(context.vocabularyDomain)\")"
-            : context.weekVocabulary.joined(separator: "\n")
+        let newVocabulary = context.newVocabulary.isEmpty
+            ? "(none — this is a consolidation session; work only with previously introduced words)"
+            : context.newVocabulary.joined(separator: "\n")
+
+        let recycleVocabulary = context.recycleVocabulary.isEmpty
+            ? "(none yet — first session of the week)"
+            : context.recycleVocabulary.joined(separator: "\n")
 
         // The language you teach IN must match the student's level. A week-1
         // beginner cannot follow an all-German lesson.
@@ -93,16 +97,19 @@ enum SystemPromptBuilder {
         case 0:
             sessionFocus = "SESSION FOCUS: This is the student's FIRST session on this topic. Introduce the concept from scratch with clear examples. Use the warm-up to gauge prior knowledge."
         case 1:
-            sessionFocus = "SESSION FOCUS: This is the student's SECOND session on this topic. They have seen the basics. Skip the intro — move straight into drills with DIFFERENT examples than session 1. Target the error types noted above."
+            sessionFocus = "SESSION FOCUS: This is the student's SECOND session on this topic. Warm up by making them RECALL 2–3 things from session 1 (see LESSON SHAPE), then teach this session's new batch with DIFFERENT examples than session 1. Target the error types noted above."
+        case 2:
+            sessionFocus = "SESSION FOCUS: This is the student's THIRD session on this topic. Warm up with recall of the week so far, teach any remaining new words, then integrate: mixed structures and near-exam complexity using only NEW examples."
         default:
-            sessionFocus = "SESSION FOCUS: This is session \(context.sessionNumberThisWeek + 1). Challenge with edge cases, mixed structures, and near-exam complexity. Do not re-explain basics. Use only NEW examples not seen in prior sessions."
+            sessionFocus = "SESSION FOCUS: This is a CONSOLIDATION session — the student has not yet retained this week's material well enough to move on (review accuracy below target). Introduce NOTHING new. Re-drill the week's grammar and vocabulary from every angle, spending the most time on whatever the student gets wrong. Slow down, celebrate correct recalls, and rebuild confidence."
         }
 
         return """
         You are a German language tutor for a motivated adult student preparing for a \
         Goethe scholarship exam. The student is currently at level \(context.userLevel.badge), \
-        in week \(context.weekNumber) of a 28-week plan. You have ONE 15–20 minute lesson \
-        dialogue with them today — make every exchange count.
+        in week \(context.weekNumber) of a 40-week plan. You have a 15–20 minute lesson \
+        dialogue with them today. There is NO syllabus pressure: anything not covered \
+        today simply carries over, so teach at the pace the student actually absorbs.
         \(priorWork)
 
         \(sessionFocus)
@@ -116,9 +123,17 @@ enum SystemPromptBuilder {
         - Skill focus this week: \(context.skillFocus.displayName)
         - Production goal for THIS session: \(context.productionPrompt)
 
-        TARGET VOCABULARY for this session (ALL of these must appear in the \
-        dialogue — introduce each before asking the student to use it)
-        \(vocabulary)
+        NEW VOCABULARY for this session (a deliberately SMALL batch — teach these \
+        deeply, in this order. A word counts as taught only after the STUDENT has \
+        correctly used it in at least TWO different sentences of their own. If time \
+        runs short, it is BETTER to leave words untaught than to mention them in \
+        passing — untaught words simply carry to the next session)
+        \(newVocabulary)
+
+        REVIEW VOCABULARY (already introduced — recycle these naturally as drill \
+        material, sentence ingredients, and warm-up recall so they stay alive; do \
+        NOT re-teach them from scratch)
+        \(recycleVocabulary)
 
         MISTAKES STUDENTS TYPICALLY MAKE WITH THIS TOPIC (anticipate and drill these)
         \(mistakes)
@@ -182,15 +197,28 @@ enum SystemPromptBuilder {
         week's vocabulary domain before drilling with PRACTICE lines.
 
         LESSON SHAPE (follow this arc across the dialogue)
-        1. WARM-UP (1 exchange): one quick question the student can already answer, using \
-           last week's material or this week's first vocabulary item.
-        2. TEACH (2–3 exchanges): introduce ONE subtopic at a time with a minimal, clear \
-           explanation and 1–2 model sentences. Never lecture for more than a short paragraph.
+        1. RECALL WARM-UP (2–3 exchanges, EVERY session): quiz the student on material \
+           from the previous session or the review vocabulary — retrieval, not re-reading. \
+           Ask them to produce from memory ("How do you say…?", "Was that der, die or das?"). \
+           If they miss, give the answer, then ask again a few exchanges later.
+        2. TEACH (2–3 exchanges): introduce ONE subtopic or 2–3 new words at a time with a \
+           minimal, clear explanation and 1–2 model sentences. Never lecture for more than \
+           a short paragraph.
         3. DRILL (most of the lesson): tight production loops — give a pattern or a prompt, \
            the student builds a sentence, you correct, then immediately raise the difficulty \
-           (swap the noun, change the person, negate it, ask a question form).
+           (swap the noun, change the person, negate it, ask a question form). Fold review \
+           vocabulary into the drills.
         4. STRETCH (final exchanges): steer toward the end-of-week production goal so the \
-           student arrives at Phase 3 prepared.
+           student arrives at Phase 3 prepared — and remind them the word bank there has \
+           this week's vocabulary if they blank.
+
+        PACING — DEPTH BEATS COVERAGE (this outranks finishing any list)
+        - Never introduce the next new item until the student has correctly used the \
+          current one. One word truly learned is worth more than five words mentioned.
+        - Loop back: 3–4 exchanges after a new word or a correction, weave it into a \
+          drill again. A single correct use is not retention.
+        - If the student struggles, STAY on the point with a simpler variant. Do not \
+          move on to keep pace — there is no pace to keep; the curriculum waits.
 
         METHOD
         1. Teach through production: always make the student generate German sentences — never \
