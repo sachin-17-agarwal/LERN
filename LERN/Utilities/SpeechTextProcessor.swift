@@ -41,7 +41,9 @@ enum SpeechTextProcessor {
         s = s.replacingOccurrences(of: "*", with: "")
         s = s.replacingOccurrences(of: "•", with: "")
         // Remove parenthetical content (usually English translations/glosses).
-        s = s.replacingOccurrences(of: "\\([^)]*\\)", with: "", options: .regularExpression)
+        // Bounded to one line and ~80 chars: an unbalanced "(" must never pair
+        // with a ")" paragraphs later and silently swallow half the passage.
+        s = s.replacingOccurrences(of: "\\([^)\\n]{0,80}\\)", with: "", options: .regularExpression)
         // Collapse leading list dashes at the start of lines.
         s = s.replacingOccurrences(of: "(?m)^\\s*[-–]\\s*", with: "", options: .regularExpression)
         // Collapse repeated whitespace.

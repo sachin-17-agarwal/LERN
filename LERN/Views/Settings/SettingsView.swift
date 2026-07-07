@@ -89,9 +89,9 @@ struct SettingsView: View {
                 Button("Remove Azure credentials", role: .destructive) { removeAzure() }
             }
         } header: {
-            Text("Pronunciation Scoring (Azure)")
+            Text("Speech (Azure)")
         } footer: {
-            Text("Optional. Powers pronunciation scoring. Create a free Speech resource at portal.azure.com and paste its key and region. Stored in the Keychain.")
+            Text("Optional. Powers pronunciation scoring AND natural-sounding audio playback (neural German voice). Without it, playback falls back to the robotic on-device voice. Create a free Speech resource at portal.azure.com and paste its key and region. Stored in the Keychain.")
         }
     }
 
