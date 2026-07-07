@@ -172,6 +172,20 @@ final class SessionViewModel: Identifiable {
 
     // MARK: - Production scaffolding
 
+    /// The writing task for THIS session, scaled in complexity across the
+    /// week. Shown on the production screen AND handed to the examiner —
+    /// the student must be graded against exactly the task they saw.
+    var productionTaskPrompt: String {
+        switch sessionNumberThisWeek {
+        case 0:
+            return "Write 2–3 simple sentences using today's grammar and vocabulary. Focus on getting the structure right — don't worry about length yet."
+        case 1:
+            return "Write a short paragraph (4–6 sentences) using both this week's grammar subtopics. Aim to use at least 5 of this week's vocabulary words."
+        default:
+            return weekData.productionPrompt + " Use all of this week's grammar subtopics and at least 8 vocabulary words. Aim for exam-level quality."
+        }
+    }
+
     /// The full week vocabulary, shown as a word bank on the production screen
     /// so the student writes with support instead of facing a blank box.
     @ObservationIgnored
@@ -366,17 +380,6 @@ final class SessionViewModel: Identifiable {
             sessionSubtopics = allSubtopics
         }
 
-        // Production goal scales in complexity across sessions.
-        let sessionProductionPrompt: String
-        switch sessionNum {
-        case 0:
-            sessionProductionPrompt = "Write 2–3 simple sentences using today's grammar and vocabulary. Focus on getting the structure right — don't worry about length yet."
-        case 1:
-            sessionProductionPrompt = "Write a short paragraph (4–6 sentences) using both this week's grammar subtopics. Aim to use at least 5 of this week's vocabulary words."
-        default:
-            sessionProductionPrompt = weekData.productionPrompt + " Use all of this week's grammar subtopics and at least 8 vocabulary words. Aim for exam-level quality."
-        }
-
         return SessionContext(
             weekNumber: weekData.weekNumber,
             grammarTopic: weekData.grammarTopic,
@@ -386,7 +389,7 @@ final class SessionViewModel: Identifiable {
             vocabularyDomain: weekData.vocabularyDomain,
             newVocabulary: batches.new.map(format),
             recycleVocabulary: batches.introduced.map(format),
-            productionPrompt: sessionProductionPrompt,
+            productionPrompt: productionTaskPrompt,
             skillFocus: weekData.skillFocus,
             userLevel: profile.currentLevel,
             recurringErrors: ErrorAnalysis.topRecurringCategories(for: profile),
