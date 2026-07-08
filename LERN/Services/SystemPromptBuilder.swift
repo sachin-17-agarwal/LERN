@@ -246,6 +246,25 @@ enum SystemPromptBuilder {
             ? "none recorded yet"
             : context.recurringErrors.map { $0.rawValue }.joined(separator: ", ")
 
+        // Feedback the student can't read is worthless — match their level.
+        let feedbackLanguage: String
+        switch context.userLevel {
+        case .preA1, .a1, .a2:
+            feedbackLanguage = """
+            FEEDBACK LANGUAGE: Write ALL feedback prose — overall_feedback, every entry in \
+            strengths and improvements, and every error explanation — in ENGLISH. The student \
+            cannot yet read German explanations. Quote German only for the specific words or \
+            sentences being discussed, and gloss each quote in English in parentheses, \
+            e.g. 'Heute ist der 15. Oktober' (Today is October 15th).
+            """
+        case .b1:
+            feedbackLanguage = """
+            FEEDBACK LANGUAGE: Write feedback in simple, clear German (short B1-level \
+            sentences) — reading examiner feedback in German is part of exam preparation. \
+            If a point involves subtle grammar, add a one-line English clarification.
+            """
+        }
+
         let isB1 = context.userLevel == .b1
         let rubricNote = isB1 ? """
 
@@ -267,6 +286,8 @@ enum SystemPromptBuilder {
         Judge accuracy against their level — do not penalise structures not yet taught, \
         but DO flag when they avoided this week's target grammar (\(context.grammarTopic)). \
         Their recurring errors: \(recurring).\(rubricNote)
+
+        \(feedbackLanguage)
 
         Evaluate professional/academic register (Sie-form default, no tourist German). \
         Identify every error and classify each into exactly one of these identifiers: \

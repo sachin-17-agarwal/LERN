@@ -59,7 +59,7 @@ enum Constants {
         static let germanLocale = "de_DE"
     }
 
-    /// Azure AI Speech — Pronunciation Assessment (REST).
+    /// Azure AI Speech — Pronunciation Assessment + neural text-to-speech (REST).
     enum Azure {
         static let language = "de-DE"
         static let sampleRate = 16000
@@ -68,6 +68,18 @@ enum Constants {
         static func endpoint(region: String) -> String {
             "https://\(region).stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1"
         }
+
+        /// Neural TTS endpoint — same subscription key as pronunciation assessment.
+        static func ttsEndpoint(region: String) -> String {
+            "https://\(region).tts.speech.microsoft.com/cognitiveservices/v1"
+        }
+        /// Natural-sounding German neural voice.
+        static let ttsVoice = "de-DE-KatjaNeural"
+        /// Learner-friendly pace: slightly slower than the voice's native rate.
+        static let ttsRate = "-10%"
+        /// Slower still, for single vocabulary words where endings matter.
+        static let ttsRateSlow = "-25%"
+        static let ttsOutputFormat = "audio-24khz-48kbitrate-mono-mp3"
     }
 
     /// Goethe-Institut Sydney contact details, surfaced on the exam readiness card.

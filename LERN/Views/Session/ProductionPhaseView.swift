@@ -35,7 +35,9 @@ struct ProductionPhaseView: View {
             Label("Production Prompt", systemImage: "pencil.line")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(Color.lernPrimary)
-            Text(viewModel.weekData.productionPrompt)
+            // Must match what the examiner grades against — never show the
+            // generic week prompt while grading the session-specific task.
+            Text(viewModel.productionTaskPrompt)
                 .font(.headline)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
