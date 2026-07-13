@@ -32,6 +32,21 @@ final class SessionViewModel: Identifiable {
     var reviewIndex: Int = 0
     var reviewCorrectCount: Int = 0
     var reviewAnswer: String = ""
+    /// Items missed on first attempt and requeued for an in-session relearning
+    /// pass at the end of the review phase.
+    private var relearnIDs: Set<UUID> = []
+    /// Short summaries of today's misses, handed to the lesson tutor so it
+    /// re-teaches exactly what just failed.
+    private var missedItemSummaries: [String] = []
+    /// First-attempt answers given so far (excludes relearning repeats).
+    private var firstAttemptsAnswered: Int = 0
+
+    /// First-attempt accuracy of TODAY's review phase. Nil until something
+    /// was answered. This is what the lesson adapts to.
+    var todayReviewAccuracy: Double? {
+        guard firstAttemptsAnswered > 0 else { return nil }
+        return Double(reviewCorrectCount) / Double(firstAttemptsAnswered)
+    }
 
     // MARK: - Lesson phase (AI dialogue)
     var messages: [Message] = []
@@ -263,8 +278,19 @@ final class SessionViewModel: Identifiable {
     /// Submits an answer for the current review item.
     func submitReview(correct: Bool) {
         guard let item = currentReviewItem else { return }
+        // Relearning pass: the miss was already recorded — this repeat is pure
+        // retrieval practice and doesn't move schedules or accuracy.
+        guard !relearnIDs.contains(item.id) else {
+            advanceReview()
+            return
+        }
+        firstAttemptsAnswered += 1
         srs.recordReview(item: item, correct: correct)
-        if correct { reviewCorrectCount += 1 }
+        if correct {
+            reviewCorrectCount += 1
+        } else {
+            requeueForRelearning(item)
+        }
         if case .error(let record) = item {
             srs.maybeResolve(record)
         }
@@ -273,10 +299,42 @@ final class SessionViewModel: Identifiable {
 
     /// Skips the current item (counts as reviewed but not mastered).
     func skipReview() {
-        if let item = currentReviewItem {
+        if let item = currentReviewItem, !relearnIDs.contains(item.id) {
+            firstAttemptsAnswered += 1
             srs.recordReview(item: item, correct: false)
+            requeueForRelearning(item)
         }
         advanceReview()
+    }
+
+    /// Whether this item is back for its in-session relearning pass.
+    func isRelearnItem(_ item: ReviewItem) -> Bool {
+        relearnIDs.contains(item.id)
+    }
+
+    /// A missed item returns at the end of this session's queue, so the review
+    /// phase ends on a corrected recall instead of moving on from a failure.
+    private func requeueForRelearning(_ item: ReviewItem) {
+        relearnIDs.insert(item.id)
+        reviewItems.append(item)
+        missedItemSummaries.append(Self.summary(for: item))
+    }
+
+    private static func summary(for item: ReviewItem) -> String {
+        switch item {
+        case .vocabulary(let v):
+            return "\(v.german) — \(v.english)"
+        case .error(let e):
+            return e.isQuizMiss
+                ? "\(e.germanText) → \(e.correctedText)"
+                : "wrote „\(e.germanText)“, correct: „\(e.correctedText)“"
+        case .genderDrill(let g):
+            return "article of \(g.noun) (\(g.correctArticle) — \(g.english))"
+        case .fillInBlank(let f):
+            return "\(f.sentence) → \(f.correctAnswer)"
+        case .multipleChoice(let m):
+            return m.question
+        }
     }
 
     private func advanceReview() {
@@ -323,23 +381,42 @@ final class SessionViewModel: Identifiable {
         await streamTutorReply()
     }
 
-    /// 0-based count of sessions already completed on this week. Also drives
-    /// vocabulary batching, so it must read the same before and during a
-    /// session (the session only persists on finish).
+    /// 0-based count of sessions already completed on this week (the current
+    /// session only persists on finish).
     private var sessionNumberThisWeek: Int {
         profile.sessions.filter { $0.weekNumber == weekData.weekNumber }.count
     }
 
-    /// Splits the week's vocabulary into per-session batches: this session
-    /// introduces a small `new` slice and recycles everything `introduced`
-    /// before it. Keeps the intake rate at something spaced repetition can
-    /// actually sustain instead of dumping the whole week at once.
+    /// When today's review went badly, the intake of new words pauses and the
+    /// lesson runs as remediation instead. The unstarted batch simply surfaces
+    /// next session — nothing is skipped.
+    private var shouldPauseNewVocabulary: Bool {
+        guard let accuracy = todayReviewAccuracy else { return false }
+        return accuracy < Constants.Curriculum.remediationThreshold
+    }
+
+    /// Splits the week's vocabulary into a small `new` batch (the next
+    /// not-yet-introduced words, in curriculum order) and the `introduced`
+    /// words to recycle. Driven by the persisted `isIntroduced` flag rather
+    /// than session arithmetic, so a paused or partial batch self-heals.
     private func vocabularyBatches() -> (new: [VocabularyItem], introduced: [VocabularyItem]) {
-        let all = CurriculumService.getVocabularyList(week: weekData.weekNumber)
-        let batch = Constants.Curriculum.newWordsPerSession
-        let start = min(sessionNumberThisWeek * batch, all.count)
-        let end = min(start + batch, all.count)
-        return (Array(all[start..<end]), Array(all[..<start]))
+        let weekItems = profile.vocabulary.filter { $0.weekIntroduced == weekData.weekNumber }
+        let byGerman = Dictionary(weekItems.map { ($0.german, $0) }, uniquingKeysWith: { a, _ in a })
+        let ordered = CurriculumService.getVocabularyList(week: weekData.weekNumber)
+            .compactMap { byGerman[$0.german] }
+
+        // Studying ahead of the seeded weeks: fall back to the raw library
+        // list so the tutor still has material to teach.
+        guard !ordered.isEmpty else {
+            let library = CurriculumService.getVocabularyList(week: weekData.weekNumber)
+            return (Array(library.prefix(Constants.Curriculum.newWordsPerSession)), [])
+        }
+
+        let pending = ordered.filter { !$0.isIntroduced }
+        let new = shouldPauseNewVocabulary
+            ? []
+            : Array(pending.prefix(Constants.Curriculum.newWordsPerSession))
+        return (new, ordered.filter { $0.isIntroduced })
     }
 
     /// Builds the Sendable AI context for the given phase. Called on the main
@@ -397,7 +474,9 @@ final class SessionViewModel: Identifiable {
             sessionPhase: phase,
             conversationHistory: history,
             sessionNumberThisWeek: sessionNum,
-            previousSessionNotes: Array(priorSessions)
+            previousSessionNotes: Array(priorSessions),
+            todayReviewAccuracy: todayReviewAccuracy,
+            todayMissedItems: Array(missedItemSummaries.prefix(10))
         )
     }
 
@@ -483,8 +562,11 @@ final class SessionViewModel: Identifiable {
         let sessionNum = profile.sessions.filter { $0.weekNumber == weekData.weekNumber }.count + 1
         var parts = ["Session \(sessionNum) of week \(weekData.weekNumber)"]
 
-        if !reviewItems.isEmpty {
-            parts.append("Review: \(reviewCorrectCount)/\(reviewItems.count) correct")
+        if firstAttemptsAnswered > 0 {
+            parts.append("Review: \(reviewCorrectCount)/\(firstAttemptsAnswered) correct")
+        }
+        if !missedItemSummaries.isEmpty {
+            parts.append("Review misses: \(missedItemSummaries.prefix(5).joined(separator: "; "))")
         }
 
         if !exitQuiz.isEmpty {
@@ -551,8 +633,6 @@ final class SessionViewModel: Identifiable {
         }
         timerTask?.cancel()
 
-        // Must run before the session record is appended — the vocabulary
-        // batch is derived from the pre-finish session count.
         markSessionVocabularyIntroduced()
 
         let session = StudySession(
@@ -562,7 +642,9 @@ final class SessionViewModel: Identifiable {
         )
         session.durationMinutes = max(1, elapsedSeconds / 60)
         session.completedPhases = completedPhases
-        session.reviewItemsCount = reviewItems.count
+        // First attempts only — relearning repeats must not distort the
+        // accuracy that drives the week's mastery gate.
+        session.reviewItemsCount = firstAttemptsAnswered
         session.reviewCorrectCount = reviewCorrectCount
         session.grammarTopicCovered = weekData.grammarTopic
         session.vocabularyDomainCovered = weekData.vocabularyDomain
@@ -592,14 +674,12 @@ final class SessionViewModel: Identifiable {
 
     /// Marks this session's vocabulary batch as formally introduced so it
     /// enters the review rotation from the next session. Only runs when the
-    /// lesson phase actually happened.
+    /// lesson phase actually happened; a remediation session (paused batch)
+    /// marks nothing, so those words resurface as `new` next time.
     private func markSessionVocabularyIntroduced() {
         guard completedPhases.contains(.lesson) else { return }
-        let taught = Set(vocabularyBatches().new.map { $0.german })
-        guard !taught.isEmpty else { return }
         let now = Date()
-        for item in profile.vocabulary
-        where item.weekIntroduced == weekData.weekNumber && !item.isIntroduced && taught.contains(item.german) {
+        for item in vocabularyBatches().new {
             item.isIntroduced = true
             item.nextReviewDate = now
         }
@@ -608,8 +688,7 @@ final class SessionViewModel: Identifiable {
     /// Nudges skill scores based on what the session covered.
     /// Scores are 0–100; each session can move a skill by up to ~2 points.
     private func updateSkillScores(session: StudySession) {
-        let reviewAccuracy: Double = reviewItems.isEmpty ? 0.5 :
-            Double(reviewCorrectCount) / Double(reviewItems.count)
+        let reviewAccuracy: Double = todayReviewAccuracy ?? 0.5
         let hadProduction = !session.productionText.isEmpty
 
         func clamp(_ v: Double) -> Double { min(1.0, max(0, v)) }

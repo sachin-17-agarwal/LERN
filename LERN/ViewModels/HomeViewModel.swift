@@ -33,6 +33,14 @@ final class HomeViewModel {
     /// Sessions needed to complete a week and advance the main track.
     var sessionsToCompleteWeek: Int { Constants.Curriculum.sessionsToCompleteWeek }
 
+    /// Pooled review accuracy for a week (nil until reviews were answered).
+    func retention(forWeek week: Int) -> Double? {
+        CurriculumService.weekReviewAccuracy(for: profile, week: week)
+    }
+
+    /// Review accuracy a week needs before it counts as mastered.
+    var masteryThreshold: Double { Constants.Curriculum.masteryAccuracyThreshold }
+
     var streak: Int { profile.currentStreak }
 
     /// Today's session type, accounting for weekend deep-dive mode.

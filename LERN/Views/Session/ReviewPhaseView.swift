@@ -29,6 +29,11 @@ struct ReviewPhaseView: View {
                     Text(viewModel.reviewProgressText)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                    if viewModel.isRelearnItem(item) {
+                        Label("Second look — you missed this earlier", systemImage: "arrow.uturn.backward")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.lernAccent)
+                    }
                 }
 
                 switch item {
