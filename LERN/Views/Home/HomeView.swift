@@ -144,29 +144,56 @@ struct HomeView: View {
                     in: RoundedRectangle(cornerRadius: LernDesign.smallRadius, style: .continuous))
     }
 
-    /// Shows how many sessions remain to complete the selected week.
+    /// Shows sessions logged AND retention against the mastery bar, so the
+    /// user can see why a week does (or doesn't) advance.
     @ViewBuilder
     private func weekProgressCard(vm: HomeViewModel, focus: Int) -> some View {
         let logged = vm.sessionsLogged(forWeek: focus)
         let target = vm.sessionsToCompleteWeek
         let progress = min(1.0, Double(logged) / Double(max(1, target)))
+        let retention = vm.retention(forWeek: focus)
+        let threshold = vm.masteryThreshold
+        let mastered = (retention ?? 1) >= threshold
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("Week \(focus) Progress").font(.headline)
                 Spacer()
-                Text("\(logged)/\(target) to complete")
+                Text("\(logged)/\(target) sessions")
                     .font(.subheadline).foregroundStyle(.secondary)
                     .lernStatNumber()
             }
             ProgressView(value: progress)
                 .tint(.lernPrimary)
                 .animation(.easeOut(duration: 0.6), value: progress)
-            Text(logged >= target
-                 ? "Week complete — keep practising or move on whenever you like."
-                 : "Do as many sessions as you like — you advance only when you choose to finish this week.")
+
+            if let retention {
+                HStack {
+                    Text("Retention").font(.subheadline)
+                    Spacer()
+                    Text("\(Int((retention * 100).rounded()))% · need \(Int(threshold * 100))%")
+                        .font(.subheadline)
+                        .foregroundStyle(mastered ? Color.lernSuccess : Color.lernAccent)
+                        .lernStatNumber()
+                }
+                ProgressView(value: min(1.0, retention))
+                    .tint(mastered ? Color.lernSuccess : Color.lernAccent)
+                    .animation(.easeOut(duration: 0.6), value: retention)
+            }
+
+            Text(caption(logged: logged, target: target, mastered: mastered, threshold: threshold))
                 .font(.caption2).foregroundStyle(.secondary)
         }
         .lernCard()
+    }
+
+    private func caption(logged: Int, target: Int, mastered: Bool, threshold: Double) -> String {
+        if logged >= target && mastered {
+            return "Week complete — keep practising or move on whenever you like."
+        }
+        if logged >= target {
+            return "Sessions done, but retention is under \(Int(threshold * 100))% — the next session runs as consolidation to lock the material in before the week advances."
+        }
+        return "The week advances once \(target) sessions are done AND retention reaches \(Int(threshold * 100))%."
     }
 
     private func quickAction(_ title: String, systemImage: String, count: Int?, action: @escaping () -> Void) -> some View {

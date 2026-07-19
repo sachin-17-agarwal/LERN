@@ -43,6 +43,10 @@ struct SessionContext: Sendable {
     let sessionNumberThisWeek: Int
     /// Notes from the previous 1–2 sessions on this week (oldest first).
     let previousSessionNotes: [String]
+    /// First-attempt accuracy of THIS session's review phase (nil = no review).
+    let todayReviewAccuracy: Double?
+    /// What the student missed in THIS session's review phase.
+    let todayMissedItems: [String]
 }
 
 /// Decodes an Int a model may have emitted as a number, a float, or a quoted

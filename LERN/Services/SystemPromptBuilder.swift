@@ -92,6 +92,48 @@ enum SystemPromptBuilder {
         """
         }
 
+        // What just happened in THIS session's review phase — the most
+        // immediate signal the tutor has, and the heart of adaptivity.
+        let todayReview: String
+        if let accuracy = context.todayReviewAccuracy {
+            let pct = Int((accuracy * 100).rounded())
+            let missed = context.todayMissedItems.isEmpty
+                ? "(none)"
+                : context.todayMissedItems.map { "• \($0)" }.joined(separator: "\n")
+            let stance: String
+            if accuracy < Constants.Curriculum.remediationThreshold {
+                stance = """
+                Accuracy is BELOW 50%, so THIS LESSON IS REMEDIATION. Introduce NO new \
+                vocabulary or subtopics. Open by telling the student, warmly and plainly, \
+                that today's session is about repairing the gaps from review — that this is \
+                the system working, not a setback. Then re-teach each missed item from \
+                scratch and drill it in short production loops until recall is solid, \
+                returning to each one again a few exchanges later.
+                """
+            } else if accuracy < Constants.Curriculum.masteryAccuracyThreshold {
+                stance = """
+                Accuracy is below the 70% mastery bar. Acknowledge it briefly, spend the \
+                first third of the lesson re-teaching and drilling the missed items, and \
+                keep weaving them into every later drill before introducing new material.
+                """
+            } else {
+                stance = """
+                Solid recall — say so. Reinforce any missed items during the warm-up, \
+                then proceed with the planned material.
+                """
+            }
+            todayReview = """
+
+        TODAY'S REVIEW RESULT (from the review phase minutes ago, THIS session)
+        - First-attempt accuracy: \(pct)%
+        - Missed items (these are your TOP teaching priority today):
+        \(missed)
+        ADAPT TO THIS: \(stance)
+        """
+        } else {
+            todayReview = ""
+        }
+
         let sessionFocus: String
         switch context.sessionNumberThisWeek {
         case 0:
@@ -141,6 +183,7 @@ enum SystemPromptBuilder {
         STUDENT PROFILE
         - Skill estimates: \(skills)
         - Recurring error categories to watch for: \(recurring)
+        \(todayReview)
 
         LANGUAGE OF INSTRUCTION
         \(languageOfInstruction)

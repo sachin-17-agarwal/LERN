@@ -36,6 +36,9 @@ enum Constants {
         /// A week only completes when review accuracy across its sessions
         /// reaches this level; below it, extra sessions become consolidation.
         static let masteryAccuracyThreshold = 0.7
+        /// Below this review accuracy TODAY, the lesson switches to pure
+        /// remediation: no new vocabulary, re-teach what was missed.
+        static let remediationThreshold = 0.5
         /// Safety valve: after this many sessions the week completes regardless
         /// of accuracy, so nobody is stuck on one week forever.
         static let maxSessionsPerWeek = 5
